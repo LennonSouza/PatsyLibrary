@@ -4,16 +4,32 @@
     ViewData["Title"] = "Permissões";
 }
 
-<h1>@ViewData["Title"]</h1>
+<h1 class="mb-4"><i class="fas fa-shield-alt"></i> @ViewData["Title"]</h1>
 
-<p>
-    <a href="@Url.Action("Add")">Adicionar Nova Permissão</a>
-</p>
+<!-- Pesquisa e Filtros -->
+<div class="container">
+    <div class="row mb-3 d-flex justify-content-between">
+        <div class="col-12 col-md-4 d-flex align-items-center mb-2 mb-md-0">
+            <input type="text" id="userSearch" class="form-control me-2" placeholder="Pesquisar permissão...">
+        </div>
 
-<table class="table">
-    <thead>
+        <!-- Ajustando o alinhamento do botão -->
+        <div class="col-12 col-md-6 d-flex align-items-center justify-content-md-end mb-2 mb-md-0">
+            <button class="btn btn-primary mb-3" id="btnAddPermission">
+                <i class="fas fa-plus-circle"></i> Adicionar Nova Permissão
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
         <tr>
             <th>Nome da Permissão</th>
+            <th class="text-center">Ações</th>
         </tr>
     </thead>
     <tbody>
@@ -21,7 +37,157 @@
         {
             <tr>
                 <td>@permission.Name</td>
+                <td class="text-center">
+                    <button class="btn btn-warning btn-sm btn-update" data-id="@permission.PermissionId">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm btn-delete" data-id="@permission.PermissionId">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
             </tr>
         }
     </tbody>
 </table>
+
+<!-- Modal -->
+<div class="modal fade" id="genericModal" aria-labelledby="genericModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="genericModalLabel">Adicionar Permissão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="genericFormContainer">
+                <!-- O formulário será carregado aqui via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<!-- Carregar o jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Carregar o SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.4/dist/sweetalert2.all.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Adicionar Permissão
+        $("#btnAddPermission").click(function () {
+            $.get("@Url.Action("Insert", "Permission")", function (data) {
+                $("#genericFormContainer").html(data); // Carrega o formulário no modal
+                $("#genericModalLabel").text("Adicionar Permissão"); // Título do modal
+                $("#genericModal").modal("show"); // Abre o modal
+            });
+        });
+
+        // Editar Permissão
+        $(".btn-update").click(function () {
+            var id = $(this).data("id");
+            $.get("@Url.Action("Update", "Permission")", { id: id }, function (data) {
+                $("#genericFormContainer").html(data); // Carrega o formulário no modal
+                $("#genericModalLabel").text("Editar Permissão"); // Título do modal
+                $("#genericModal").modal("show"); // Abre o modal
+            });
+        });
+
+        // Excluir Permissão
+        $(".btn-delete").click(function () {
+            var id = $(this).data("id");
+
+            if (confirm("Tem certeza que deseja excluir esta permissão?")) {
+                $.post("@Url.Action("Delete", "Permission")", { id: id }, function (response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sucesso!',
+                            text: response.message
+                        }).then(() => {
+                            location.reload(); // Recarrega a página após a exclusão
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: response.message
+                        });
+                    }
+                }).fail(function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: 'Ocorreu um erro ao tentar excluir a permissão. Tente novamente.'
+                    });
+                });
+            }
+        });
+
+      
+        // Submissão do formulário de Adicionar/Editar Permissão
+        $(document).on('submit', '#permissionForm', function (e) {
+            e.preventDefault();
+
+            var form = $(this);
+            var actionUrl = form.attr('action'); // Obtém a URL da ação
+            Swal.fire({
+                title: 'Enviando...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: actionUrl,
+                type: 'POST',
+                data: form.serialize(), // Envia os dados do formulário (PermissionId e Name)
+                success: function (response) {
+                    Swal.close(); // Fecha o loader
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sucesso!',
+                            text: response.message
+                        }).then(() => {
+                            $("#genericModal").modal('hide'); // Fecha o modal
+                            location.reload(); // Recarrega a página
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: response.message || 'Erro ao editar permissão.'
+                        });
+                    }
+                },
+                error: function () {
+                    Swal.close(); // Fecha o loader
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: 'Ocorreu um erro ao processar a solicitação. Tente novamente.'
+                    });
+                }
+            });
+        });
+    });
+
+</script>
+
+<!-- FontAwesome para ícones -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+<script>
+    $(document).ready(function () {
+        // Filtro de nome (Pesquisa)
+        $("#userSearch").on("keyup", function () {
+            var value = $(this).val().toLowerCase();
+            $("table tbody tr").filter(function () {
+                $(this).toggle($(this).find("td:eq(0)").text().toLowerCase().indexOf(value) > -1);
+            });
+        });
+    });
+</script>

@@ -9,7 +9,7 @@ public class Department
     public ICollection<Role> Roles { get; set; }
 
     // Relacionamento muitos-para-muitos com ApplicationUser
-    public virtual ICollection<DepartmentApplicationUser> DepartmentApplicationUsers { get; set; }
+    public virtual ICollection<DepartmentUser> DepartmentUsers { get; set; }
 
     public void SetName(string name)
     {

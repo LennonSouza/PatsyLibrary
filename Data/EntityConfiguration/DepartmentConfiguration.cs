@@ -26,7 +26,7 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
             .HasForeignKey(r => r.DepartmentId)  // Definindo a chave estrangeira
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(d => d.DepartmentApplicationUsers)
+        builder.HasMany(d => d.DepartmentUsers)
             .WithOne(du => du.Department)
             .HasForeignKey(du => du.DepartmentId)
             .OnDelete(DeleteBehavior.Cascade);

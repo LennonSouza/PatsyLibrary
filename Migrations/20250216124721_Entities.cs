@@ -25,20 +25,6 @@ namespace PatsyLibrary.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicationUsers",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ApplicationUsers", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "BookGenders",
                 columns: table => new
                 {
@@ -91,6 +77,21 @@ namespace PatsyLibrary.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    UserId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PassWord = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.UserId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Books",
                 columns: table => new
                 {
@@ -120,30 +121,6 @@ namespace PatsyLibrary.Migrations
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Books_Departments_DepartmentId",
-                        column: x => x.DepartmentId,
-                        principalTable: "Departments",
-                        principalColumn: "DepartmentId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "DepartmentApplicationUsers",
-                columns: table => new
-                {
-                    DepartmentId = table.Column<short>(type: "smallint", nullable: false),
-                    ApplicationUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DepartmentApplicationUsers", x => new { x.DepartmentId, x.ApplicationUserId });
-                    table.ForeignKey(
-                        name: "FK_DepartmentApplicationUsers_ApplicationUsers_ApplicationUserId",
-                        column: x => x.ApplicationUserId,
-                        principalTable: "ApplicationUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_DepartmentApplicationUsers_Departments_DepartmentId",
                         column: x => x.DepartmentId,
                         principalTable: "Departments",
                         principalColumn: "DepartmentId",
@@ -202,6 +179,30 @@ namespace PatsyLibrary.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DepartmentUsers",
+                columns: table => new
+                {
+                    DepartmentId = table.Column<short>(type: "smallint", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DepartmentUsers", x => new { x.DepartmentId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_DepartmentUsers_Departments_DepartmentId",
+                        column: x => x.DepartmentId,
+                        principalTable: "Departments",
+                        principalColumn: "DepartmentId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_DepartmentUsers_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "BookStatus",
                 columns: table => new
                 {
@@ -242,9 +243,9 @@ namespace PatsyLibrary.Migrations
                 column: "DepartmentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DepartmentApplicationUsers_ApplicationUserId",
-                table: "DepartmentApplicationUsers",
-                column: "ApplicationUserId");
+                name: "IX_DepartmentUsers_UserId",
+                table: "DepartmentUsers",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Roles_AccessId",
@@ -270,7 +271,7 @@ namespace PatsyLibrary.Migrations
                 name: "BookStatus");
 
             migrationBuilder.DropTable(
-                name: "DepartmentApplicationUsers");
+                name: "DepartmentUsers");
 
             migrationBuilder.DropTable(
                 name: "Roles");
@@ -282,7 +283,7 @@ namespace PatsyLibrary.Migrations
                 name: "Books");
 
             migrationBuilder.DropTable(
-                name: "ApplicationUsers");
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Accesses");

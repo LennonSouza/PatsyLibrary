@@ -55,29 +55,6 @@ namespace PatsyLibrary.Migrations
                     b.ToTable("AccessPermissions", (string)null);
                 });
 
-            modelBuilder.Entity("PatsyLibrary.Models.ApplicationUser", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ApplicationUsers");
-                });
-
             modelBuilder.Entity("PatsyLibrary.Models.Book", b =>
                 {
                     b.Property<int>("BookId")
@@ -233,19 +210,19 @@ namespace PatsyLibrary.Migrations
                     b.ToTable("Departments");
                 });
 
-            modelBuilder.Entity("PatsyLibrary.Models.DepartmentApplicationUser", b =>
+            modelBuilder.Entity("PatsyLibrary.Models.DepartmentUser", b =>
                 {
                     b.Property<short>("DepartmentId")
                         .HasColumnType("smallint");
 
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
-                    b.HasKey("DepartmentId", "ApplicationUserId");
+                    b.HasKey("DepartmentId", "UserId");
 
-                    b.HasIndex("ApplicationUserId");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("DepartmentApplicationUsers");
+                    b.ToTable("DepartmentUsers");
                 });
 
             modelBuilder.Entity("PatsyLibrary.Models.Permission", b =>
@@ -294,6 +271,34 @@ namespace PatsyLibrary.Migrations
                     b.ToTable("Roles");
                 });
 
+            modelBuilder.Entity("PatsyLibrary.Models.User", b =>
+                {
+                    b.Property<int>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PassWord")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("PatsyLibrary.Models.AccessPermission", b =>
                 {
                     b.HasOne("PatsyLibrary.Models.Access", "Access")
@@ -336,23 +341,23 @@ namespace PatsyLibrary.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PatsyLibrary.Models.DepartmentApplicationUser", b =>
+            modelBuilder.Entity("PatsyLibrary.Models.DepartmentUser", b =>
                 {
-                    b.HasOne("PatsyLibrary.Models.ApplicationUser", "ApplicationUser")
-                        .WithMany("DepartmentApplicationUsers")
-                        .HasForeignKey("ApplicationUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("PatsyLibrary.Models.Department", "Department")
-                        .WithMany("DepartmentApplicationUsers")
+                        .WithMany("DepartmentUsers")
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ApplicationUser");
+                    b.HasOne("PatsyLibrary.Models.User", "User")
+                        .WithMany("DepartmentUsers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Department");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PatsyLibrary.Models.Role", b =>
@@ -374,16 +379,16 @@ namespace PatsyLibrary.Migrations
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("PatsyLibrary.Models.ApplicationUser", b =>
-                {
-                    b.Navigation("DepartmentApplicationUsers");
-                });
-
             modelBuilder.Entity("PatsyLibrary.Models.Department", b =>
                 {
-                    b.Navigation("DepartmentApplicationUsers");
+                    b.Navigation("DepartmentUsers");
 
                     b.Navigation("Roles");
+                });
+
+            modelBuilder.Entity("PatsyLibrary.Models.User", b =>
+                {
+                    b.Navigation("DepartmentUsers");
                 });
 #pragma warning restore 612, 618
         }

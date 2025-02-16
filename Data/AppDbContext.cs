@@ -8,7 +8,7 @@ public class AppDbContext : DbContext
     // Construtor
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+    public DbSet<User> Users { get; set; }
     public DbSet<Access> Accesses { get; set; }
     public DbSet<Book> Books { get; set; }
     public DbSet<BookGender> BookGenders { get; set; }
@@ -17,7 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<Department> Departments { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<Role> Roles { get; set; }
-    public DbSet<DepartmentApplicationUser> DepartmentApplicationUsers { get; set; } // Tabela de junção
+    public DbSet<DepartmentUser> DepartmentUsers { get; set; } // Tabela de junção
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
