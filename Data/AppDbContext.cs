@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<DepartmentUser> DepartmentUsers { get; set; } // Tabela de junção
+    public DbSet<AccessPermission> AccessPermissions { get; set; } // Tabela de junção
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

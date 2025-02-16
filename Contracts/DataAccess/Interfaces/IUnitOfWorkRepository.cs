@@ -3,7 +3,7 @@
 public interface IUnitOfWorkRepository
 {
     IPermissionRepository PermissionRepository { get; }
-
+    IAccessRepository AccessRepository { get; }
 
     Task Save();
 }

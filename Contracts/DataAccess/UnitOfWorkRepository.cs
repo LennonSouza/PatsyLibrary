@@ -6,6 +6,7 @@ namespace PatsyLibrary.Contracts.DataAccess;
 public class UnitOfWorkRepository : IUnitOfWorkRepository
 {
     private IPermissionRepository _permissionRepository;
+    private IAccessRepository _accessRepository;
     public AppDbContext _context;
 
     public UnitOfWorkRepository(AppDbContext context) => _context = context;
@@ -13,6 +14,11 @@ public class UnitOfWorkRepository : IUnitOfWorkRepository
     public IPermissionRepository PermissionRepository
     {
         get => _permissionRepository = _permissionRepository ?? new PermissionRepository(_context);
+    }
+
+    public IAccessRepository AccessRepository
+    {
+        get => _accessRepository = _accessRepository ?? new AccessRepository(_context);
     }
 
     public async Task Save() => await _context.SaveChangesAsync();

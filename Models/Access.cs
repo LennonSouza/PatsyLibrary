@@ -7,6 +7,8 @@ public sealed class Access
 
     public ICollection<Permission> Permissions { get; set; }  // Coleção de Permissions
 
+    public Access() { }
+
     // Construtor que aceita o nome e a lista de permissões
     public Access(string name)
     {
@@ -20,5 +22,16 @@ public sealed class Access
             throw new ArgumentException("O nome do acesso não pode ser vazio ou nulo.");
 
         Name = name;
+    }
+
+    // Método público para alterar o nome
+    public void UpdateName(string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            throw new ArgumentException("Nome não pode ser vazio.", nameof(newName));
+        }
+
+        Name = newName; // Atualiza o nome
     }
 }
