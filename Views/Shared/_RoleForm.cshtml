@@ -1,0 +1,37 @@
+﻿@model PatsyLibrary.Models.Role
+
+<form id="roleForm" action="@Url.Action(Model.RoleId == 0 ? "Insert" : "Update", "Role")" method="post">
+    <input type="hidden" name="RoleId" value="@Model.RoleId" />
+    <div class="mb-3">
+        <label for="Name" class="form-label">Nome do Cargo</label>
+        <input type="text" id="Name" name="name" class="form-control" value="@Model.Name" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="AccessId" class="form-label">Nível de Acesso</label>
+        <select id="AccessId" name="accessId" class="form-control" required>
+            <option value="">Selecione um nível de acesso</option>
+            @foreach (var access in ViewBag.AccessList)
+            {
+                <option value="@access.AccessId">@access.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="DepartmentId" class="form-label">Departamento</label>
+        <select id="DepartmentId" name="departmentId" class="form-control" required>
+            <option value="">Selecione um departamento</option>
+            @foreach (var department in ViewBag.DepartmentList)
+            {
+                <option value="@department.DepartmentId">@department.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-save"></i> Salvar
+        </button>
+    </div>
+</form>

@@ -1,11 +1,8 @@
-﻿using AspNetCoreGeneratedDocument;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PatsyLibrary.Contracts.DataAccess;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Models;
 using PatsyLibrary.ViewModels;
-using System.Threading.Tasks;
 
 namespace PatsyLibrary.Controllers;
 

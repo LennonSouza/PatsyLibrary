@@ -31,5 +31,8 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
             .WithMany()  // Não especificamos uma coleção de roles em Access
             .HasForeignKey(r => r.AccessId)  // Chave estrangeira para o access
             .OnDelete(DeleteBehavior.Cascade);  // Deleção em cascata
+
+        builder.Navigation(x => x.Department).AutoInclude();
+        builder.Navigation(x => x.Access).AutoInclude();
     }
 }
