@@ -6,6 +6,8 @@ public interface IUnitOfWorkRepository
     IAccessRepository AccessRepository { get; }
     IDepartmentRepository DepartmentRepository { get; }
     IRoleRepository RoleRepository { get; }
+    IBookGenderRepository BookGenderRepository { get; }
+    IBookPublisherRepository BookPublisherRepository { get; }
 
     Task Save();
 }

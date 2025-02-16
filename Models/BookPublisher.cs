@@ -17,4 +17,11 @@ public class BookPublisher
 
         Name = name;
     }
+
+    public BookPublisher() { }
+
+    public void UpdateBookPublisher(string name)
+    {
+        SetName(name);
+    }
 }

@@ -13,8 +13,8 @@ public class RoleController : Controller
     // Action para exibir a página inicial (index)
     public IActionResult Index()
     {
-        var accesses = _unitOfWorkRepository.RoleRepository.GetAll.ToList();
-        return View(accesses);
+        var roles = _unitOfWorkRepository.RoleRepository.GetAll.ToList();
+        return View(roles);
     }
 
     // Action para exibir o formulário de inserção

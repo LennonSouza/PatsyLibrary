@@ -17,4 +17,11 @@ public class BookGender
 
         Name = name;
     }
+
+    public BookGender() { }
+
+    public void UpdateBookGender(string name)
+    {
+        SetName(name);
+    }
 }
