@@ -129,7 +129,7 @@ public class AccessController : Controller
         // Adiciona as permissões selecionadas ao acesso
         foreach (var permissionId in permissionIds)
         {
-            if (!await _unitOfWorkRepository.AccessRepository.Exist(accessId, permissionId))
+            if (!await _unitOfWorkRepository.AccessRepository.PermissionExists(accessId, permissionId))
             {
                 var model = new AccessPermission
                 {

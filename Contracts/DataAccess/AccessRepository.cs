@@ -19,7 +19,7 @@ public class AccessRepository : Repository<Access, byte>, IAccessRepository
                        .Select(ap => ap.Permission)
                        .ToListAsync();
 
-    public async Task<bool> Exist(byte accessId, short permissionId) => await _context.AccessPermissions
+    public async Task<bool> PermissionExists(byte accessId, short permissionId) => await _context.AccessPermissions
             .AnyAsync(ap => ap.AccessId == accessId && ap.PermissionId == permissionId);
 
     public async Task<AccessPermission> GetPermissionIdByAccessId(byte accessId, short permissionId) =>  await _context.AccessPermissions
