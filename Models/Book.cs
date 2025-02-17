@@ -64,8 +64,10 @@ public class Book
     public DateTime CreatedAt { get; private set; }
     public DateTime LastUpdatedAt { get; private set; }
 
-    public short DepartmentId { get; private set; }
-    public short? BookGenderId { get; private set; }
+    public short DepartmentId { get; set; }
+    public virtual Department Department { get; set; }
+    public short? BookGenderId { get; set; }
+    public virtual BookGender BookGender { get; set; }
 
     // Métodos para atualizar as propriedades com validações
     public void SetAuthor(string author)
@@ -140,9 +142,9 @@ public class Book
         DepartmentId = departmentId;
     }
 
-    public void SetBookGenderId(short bookGenderId)
+    public void SetBookGenderId(short? bookGenderId)
     {
-        if (bookGenderId <= 0)
+        if (bookGenderId is not null && bookGenderId <= 0)
             throw new ArgumentException("O ID do gênero do livro deve ser válido.");
 
         BookGenderId = bookGenderId;
@@ -158,8 +160,11 @@ public class Book
     // Método para atualizar a sinopse
     public void UpdateSinopse(string newSinopse)
     {
-        SetSinopse(newSinopse);
-        LastUpdatedAt = DateTime.UtcNow;
+        if (!string.IsNullOrWhiteSpace(newSinopse))
+        {
+            SetSinopse(newSinopse);
+            LastUpdatedAt = DateTime.UtcNow;
+        }
     }
 
     // Método para atualizar o título

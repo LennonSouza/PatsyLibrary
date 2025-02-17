@@ -320,16 +320,20 @@ namespace PatsyLibrary.Migrations
 
             modelBuilder.Entity("PatsyLibrary.Models.Book", b =>
                 {
-                    b.HasOne("PatsyLibrary.Models.BookGender", null)
-                        .WithMany()
+                    b.HasOne("PatsyLibrary.Models.BookGender", "BookGender")
+                        .WithMany("Books")
                         .HasForeignKey("BookGenderId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("PatsyLibrary.Models.Department", null)
-                        .WithMany()
+                    b.HasOne("PatsyLibrary.Models.Department", "Department")
+                        .WithMany("Books")
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("BookGender");
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("PatsyLibrary.Models.BookStatus", b =>
@@ -379,8 +383,15 @@ namespace PatsyLibrary.Migrations
                     b.Navigation("Department");
                 });
 
+            modelBuilder.Entity("PatsyLibrary.Models.BookGender", b =>
+                {
+                    b.Navigation("Books");
+                });
+
             modelBuilder.Entity("PatsyLibrary.Models.Department", b =>
                 {
+                    b.Navigation("Books");
+
                     b.Navigation("DepartmentUsers");
 
                     b.Navigation("Roles");

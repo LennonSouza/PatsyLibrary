@@ -11,6 +11,7 @@ public class UnitOfWorkRepository : IUnitOfWorkRepository
     private IRoleRepository _roleRepostitory;
     private IBookGenderRepository _bookGenderRepository;
     private IBookPublisherRepository _bookPublisherRepository;
+    private IBookRepository _bookRepository;
     public AppDbContext _context;
 
     public UnitOfWorkRepository(AppDbContext context) => _context = context;
@@ -43,6 +44,11 @@ public class UnitOfWorkRepository : IUnitOfWorkRepository
     public IBookPublisherRepository BookPublisherRepository
     {
         get => _bookPublisherRepository = _bookPublisherRepository ?? new BookPublisherRepository(_context);
+    }
+
+    public IBookRepository BookRepository
+    {
+        get => _bookRepository = _bookRepository ?? new BookRepository(_context);
     }
 
     public async Task Save() => await _context.SaveChangesAsync();

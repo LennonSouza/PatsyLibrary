@@ -10,6 +10,7 @@ public class Department
 
     // Relacionamento muitos-para-muitos com ApplicationUser
     public virtual ICollection<DepartmentUser> DepartmentUsers { get; set; }
+    public virtual ICollection<Book> Books { get; set; }
 
     public Department() { }
 

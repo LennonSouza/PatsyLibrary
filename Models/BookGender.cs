@@ -10,6 +10,8 @@ public class BookGender
     public short BookGenderId { get; private set; }
     public string Name { get; private set; }
 
+    public virtual ICollection<Book> Books { get; set; }
+
     public void SetName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

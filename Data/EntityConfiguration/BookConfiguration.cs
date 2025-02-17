@@ -47,15 +47,18 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
             .IsRequired();
 
         // Relacionamento com o Department (1:N)
-        builder.HasOne<Department>()
-            .WithMany()  // Um Department pode ter muitos Books
-            .HasForeignKey(b => b.DepartmentId)  // Chave estrangeira
-            .OnDelete(DeleteBehavior.Cascade);  // Restrição no caso de deleção (ajuste conforme necessidade)
+        builder.HasOne(b => b.Department)  // Especifica explicitamente a propriedade de navegação
+               .WithMany(d => d.Books)        // Especifica que um departamento pode ter muitos livros
+               .HasForeignKey(b => b.DepartmentId) // Define a chave estrangeira corretamente
+               .OnDelete(DeleteBehavior.Cascade);
 
         // Relacionamento opcional com o BookGender (N:1)
-        builder.HasOne<BookGender>()
-            .WithMany()  // Um BookGender pode ter muitos Books
-            .HasForeignKey(b => b.BookGenderId)  // Chave estrangeira
-            .OnDelete(DeleteBehavior.SetNull);  // Quando o BookGender for deletado, o BookGenderId será nulo
+        builder.HasOne(b => b.BookGender)
+               .WithMany(bg => bg.Books)  // Certifique-se de que BookGender tem uma coleção Books
+               .HasForeignKey(b => b.BookGenderId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Navigation(x => x.Department).AutoInclude();
+        builder.Navigation(x => x.BookGender).AutoInclude();
     }
 }

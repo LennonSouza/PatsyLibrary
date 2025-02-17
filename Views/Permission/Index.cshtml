@@ -74,12 +74,13 @@
 
 <script>
     $(document).ready(function () {
+
         // Adicionar Permissão
         $("#btnAddPermission").click(function () {
             $.get("@Url.Action("Insert", "Permission")", function (data) {
-                $("#genericFormContainer").html(data); // Carrega o formulário no modal
-                $("#genericModalLabel").text("Adicionar Permissão"); // Título do modal
-                $("#genericModal").modal("show"); // Abre o modal
+                $("#genericFormContainer").html(data);
+                $("#genericModalLabel").text("Adicionar Permissão");
+                $("#genericModal").modal("show");
             });
         });
 
@@ -87,100 +88,89 @@
         $(".btn-update").click(function () {
             var id = $(this).data("id");
             $.get("@Url.Action("Update", "Permission")", { id: id }, function (data) {
-                $("#genericFormContainer").html(data); // Carrega o formulário no modal
-                $("#genericModalLabel").text("Editar Permissão"); // Título do modal
-                $("#genericModal").modal("show"); // Abre o modal
+                $("#genericFormContainer").html(data);
+                $("#genericModalLabel").text("Editar Permissão");
+                $("#genericModal").modal("show");
             });
         });
 
-        // Excluir Permissão
+        // Excluir Permissão (Melhorado com SweetAlert2)
         $(".btn-delete").click(function () {
             var id = $(this).data("id");
 
-            if (confirm("Tem certeza que deseja excluir esta permissão?")) {
-                $.post("@Url.Action("Delete", "Permission")", { id: id }, function (response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sucesso!',
-                            text: response.message
-                        }).then(() => {
-                            location.reload(); // Recarrega a página após a exclusão
+            Swal.fire({
+                title: "Tem certeza?",
+                text: "Essa ação não pode ser desfeita!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sim, excluir!",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post("@Url.Action("Delete", "Permission")", { id: id })
+                        .done(function (response) {
+                            if (response.success) {
+                                Swal.fire("Excluído!", response.message, "success");
+                                $("button[data-id='" + id + "']").closest("tr").fadeOut(); // Remove da tabela sem recarregar
+                            } else {
+                                Swal.fire("Erro!", response.message, "error");
+                            }
+                        })
+                        .fail(function () {
+                            Swal.fire("Erro!", "Não foi possível excluir. Tente novamente.", "error");
                         });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Erro!',
-                            text: response.message
-                        });
-                    }
-                }).fail(function () {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro!',
-                        text: 'Ocorreu um erro ao tentar excluir a permissão. Tente novamente.'
-                    });
-                });
-            }
-        });
-
-      
-        // Submissão do formulário de Adicionar/Editar Permissão
-    $(document).on('submit', '#accessForm', function (e) {
-        e.preventDefault();
-
-        var form = $(this);
-        var actionUrl = form.attr('action'); // Obtém a URL da ação
-        Swal.fire({
-            title: 'Enviando...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        $.ajax({
-            url: actionUrl,
-            type: 'POST',
-            data: form.serialize(), // Envia os dados do formulário (AccessId e Name)
-            success: function (response) {
-                Swal.close(); // Fecha o loader
-                if (response.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Sucesso!',
-                        text: response.message
-                    }).then(() => {
-                        $("#genericModal").modal('hide'); // Fecha o modal
-                        location.reload(); // Recarrega a página
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro!',
-                        text: response.message || 'Erro ao editar acesso.'
-                    });
                 }
-            },
-            error: function () {
-                Swal.close(); // Fecha o loader
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro!',
-                    text: 'Ocorreu um erro ao processar a solicitação. Tente novamente.'
-                });
-            }
-        });
-    });
-
-      // Filtro de nome (Pesquisa)
-        $("#permissionSearch").on("keyup", function () {
-            var value = $(this).val().toLowerCase();
-            $("table tbody tr").filter(function () {
-                $(this).toggle($(this).find("td:eq(0)").text().toLowerCase().indexOf(value) > -1);
             });
         });
 
+        // Submissão do Formulário de Adicionar/Editar
+        $(document).on("submit", "#permissionForm", function (e) {
+            e.preventDefault();
+
+            var form = $(this);
+            var actionUrl = form.attr("action");
+
+            Swal.fire({
+                title: "Enviando...",
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: actionUrl,
+                type: "POST",
+                data: form.serialize(),
+                success: function (response) {
+                    Swal.close();
+                    if (response.success) {
+                        Swal.fire("Sucesso!", response.message, "success").then(() => {
+                            $("#genericModal").modal("hide");
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire("Erro!", response.message || "Erro ao processar a solicitação.", "error");
+                    }
+                },
+                error: function () {
+                    Swal.close();
+                    Swal.fire("Erro!", "Ocorreu um erro ao processar a solicitação.", "error");
+                }
+            });
+        });
+
+        // Filtro de Permissão (Pesquisa)
+        $("#permissionSearch").on("keyup", function () {
+            var value = $(this).val().toLowerCase();
+            $("table tbody tr").each(function () {
+                $(this).toggle($(this).find("td:first").text().toLowerCase().indexOf(value) > -1);
+            });
+        });
+
+    });
 </script>
 
 <!-- FontAwesome para ícones -->

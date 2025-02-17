@@ -15,7 +15,7 @@ public class AccessController : Controller
     // Action para exibir a página inicial (index)
     public IActionResult Index()
     {
-        var accesses = _unitOfWorkRepository.AccessRepository.GetAll.ToList();
+        var accesses = _unitOfWorkRepository.AccessRepository.GetAll.ToList().OrderBy(x => x.Name);
         return View(accesses);
     }
 

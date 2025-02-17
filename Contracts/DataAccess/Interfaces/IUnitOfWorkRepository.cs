@@ -8,6 +8,7 @@ public interface IUnitOfWorkRepository
     IRoleRepository RoleRepository { get; }
     IBookGenderRepository BookGenderRepository { get; }
     IBookPublisherRepository BookPublisherRepository { get; }
+    IBookRepository BookRepository { get; }
 
     Task Save();
 }
