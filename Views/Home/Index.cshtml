@@ -1,8 +1,136 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "PatsyLibrary - Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- Hero Section com Carrossel -->
+<section class="hero-section bg-light py-5">
+    <div class="container">
+        <div id="libraryCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 text-center text-md-start">
+                            <h1 class="display-4 fw-bold">Bem-vindo à PatsyLibrary</h1>
+                            <p class="lead">Descubra um mundo de conhecimento com nossa biblioteca digital moderna.</p>
+                            <a class="btn btn-primary btn-lg mt-3" asp-controller="Book" asp-action="Index">Explorar Livros</a>
+                        </div>
+                        <div class="col-md-6">
+                            <img src="~/images/library-hero-1.jpg" class="d-block w-100 rounded" alt="Livros em destaque">
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 text-center text-md-start">
+                            <h1 class="display-4 fw-bold">Leitura Sem Limites</h1>
+                            <p class="lead">Acesse milhares de títulos a qualquer hora, em qualquer lugar.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <img src="~/images/library-hero-2.jpg" class="d-block w-100 rounded" alt="Leitura digital">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#libraryCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#libraryCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Próximo</span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Seção de Destaques -->
+<section class="features-section py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Por que escolher a PatsyLibrary?</h2>
+        <div class="row text-center">
+            <div class="col-md-4">
+                <i class="fas fa-book fa-3x mb-3 text-primary"></i>
+                <h5>Coleção Extensa</h5>
+                <p>Milhares de livros de diversos gêneros ao seu alcance.</p>
+            </div>
+            <div class="col-md-4">
+                <i class="fas fa-mobile-alt fa-3x mb-3 text-primary"></i>
+                <h5>Acesso Mobile</h5>
+                <p>Leia no celular, tablet ou computador, onde estiver.</p>
+            </div>
+            <div class="col-md-4">
+                <i class="fas fa-users fa-3x mb-3 text-primary"></i>
+                <h5>Comunidade</h5>
+                <p>Conecte-se com outros amantes da leitura.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Seção de Livros em Destaque (exemplo) -->
+<section class="books-section bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Livros em Destaque</h2>
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    <img src="~/images/book1.jpg" class="card-img-top" alt="Livro 1">
+                    <div class="card-body">
+                        <h5 class="card-title">Título do Livro</h5>
+                        <p class="card-text">Autor: Exemplo</p>
+                        <a href="#" class="btn btn-outline-primary">Ver Detalhes</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    <img src="~/images/book2.jpg" class="card-img-top" alt="Livro 2">
+                    <div class="card-body">
+                        <h5 class="card-title">Outro Livro</h5>
+                        <p class="card-text">Autor: Outro</p>
+                        <a href="#" class="btn btn-outline-primary">Ver Detalhes</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    <img src="~/images/book3.jpg" class="card-img-top" alt="Livro 3">
+                    <div class="card-body">
+                        <h5 class="card-title">Mais um Livro</h5>
+                        <p class="card-text">Autor: Exemplo 2</p>
+                        <a href="#" class="btn btn-outline-primary">Ver Detalhes</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    <img src="~/images/book4.jpg" class="card-img-top" alt="Livro 4">
+                    <div class="card-body">
+                        <h5 class="card-title">Último Livro</h5>
+                        <p class="card-text">Autor: Outro 2</p>
+                        <a href="#" class="btn btn-outline-primary">Ver Detalhes</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center">
+            <a class="btn btn-primary" asp-controller="Book" asp-action="Index">Ver Todos os Livros</a>
+        </div>
+    </div>
+</section>
+
+<!-- Seção de Chamada para Ação -->
+<section class="cta-section py-5 text-center">
+    <div class="container">
+        <h2>Junte-se à Nossa Biblioteca Hoje!</h2>
+        <p class="lead">Crie sua conta e comece a explorar o universo da leitura.</p>
+        @if (!User.Identity.IsAuthenticated)
+        {
+            <a class="btn btn-outline-primary btn-lg ms-2" asp-controller="Account" asp-action="Login">Login</a>
+        }
+        else
+        {
+            <a class="btn btn-primary btn-lg" asp-controller="Book" asp-action="Index">Meus Livros</a>
+        }
+    </div>
+</section>

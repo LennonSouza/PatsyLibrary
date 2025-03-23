@@ -27,5 +27,20 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Email)
                .IsRequired()
                .HasMaxLength(100);
+
+        // Relacionamento com Department (1:N)
+        builder.HasOne(u => u.Department)
+               .WithMany(d => d.Users)
+               .HasForeignKey(u => u.DepartmentId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        // Relacionamento com Role (1:N)
+        builder.HasOne(u => u.Role)
+               .WithMany(r => r.Users)
+               .HasForeignKey(u => u.RoleId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Navigation(x => x.Department).AutoInclude();
+        builder.Navigation(x => x.Role).AutoInclude();
     }
 }

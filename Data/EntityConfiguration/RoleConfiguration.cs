@@ -8,6 +8,8 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
 {
     public void Configure(EntityTypeBuilder<Role> builder)
     {
+        builder.ToTable("Roles");
+
         // Configuração da chave primária
         builder.HasKey(r => r.RoleId);
 
@@ -20,19 +22,24 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
             .IsRequired()
             .HasMaxLength(255);  // Limite de tamanho da string, ajuste conforme necessário
 
+        builder.Property(r => r.IsActive)
+               .IsRequired()
+               .HasDefaultValue(false);
+
         // Relacionamento com o Departamento
         builder.HasOne(r => r.Department)  // Cada role tem um departamento
             .WithMany(d => d.Roles)  // Um departamento pode ter muitos roles
             .HasForeignKey(r => r.DepartmentId)  // Chave estrangeira para o departamento
-            .OnDelete(DeleteBehavior.Cascade);  // Deleção em cascata
+            .OnDelete(DeleteBehavior.Restrict);
 
-        // Relacionamento com Access
-        builder.HasOne(r => r.Access)  // Cada role tem um access
-            .WithMany()  // Não especificamos uma coleção de roles em Access
-            .HasForeignKey(r => r.AccessId)  // Chave estrangeira para o access
-            .OnDelete(DeleteBehavior.Cascade);  // Deleção em cascata
+        // Relacionamento com RolePermission
+        builder.HasMany(r => r.RolePermissions)
+               .WithOne(rp => rp.Role)
+               .HasForeignKey(rp => rp.RoleId)
+               .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(x => x.Department).AutoInclude();
-        builder.Navigation(x => x.Access).AutoInclude();
+        builder.Navigation(x => x.Users).AutoInclude();
+        builder.Navigation(x => x.RolePermissions).AutoInclude();
     }
 }

@@ -6,4 +6,5 @@ public interface IBookRepository : IRepository<Book, int>
 {
     Task<IEnumerable<Book>> GetBooksByAuthorAsync(string author);
     Task<IEnumerable<Book>> GetBooksByTitleAsync(string title);
+    public Task<Book> GetBookByISBNAsync(string isbn, short departamentId);
 }

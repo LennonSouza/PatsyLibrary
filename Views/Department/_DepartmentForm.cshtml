@@ -1,0 +1,14 @@
+﻿@model PatsyLibrary.Models.Department
+
+<form id="departmentForm" action="@Url.Action(Model.DepartmentId == 0 ? "Insert" : "Update", "Department")" method="post">
+    <input type="hidden" name="DepartmentId" value="@Model.DepartmentId" />
+    <div class="mb-3">
+        <label for="name" class="form-label">Nome do Departamento</label>
+        <input type="text" class="form-control" id="name" name="Name" value="@Model.Name" required />
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="isActive" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+        <label class="form-check-label" for="isActive">Ativo</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>

@@ -10,4 +10,5 @@ public class DepartmentRepository : Repository<Department, short>, IDepartmentRe
     public DepartmentRepository(AppDbContext context) : base(context) { }
 
     public async Task<Department> GetByName(string name) => await _context.Departments.FirstOrDefaultAsync(x => x.Name == name);
+
 }

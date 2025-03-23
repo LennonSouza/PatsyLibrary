@@ -8,6 +8,8 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
 {
     public void Configure(EntityTypeBuilder<Department> builder)
     {
+        builder.ToTable("Departments");
+
         // Configuração da chave primária
         builder.HasKey(d => d.DepartmentId);
 
@@ -20,15 +22,8 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
             .IsRequired()
             .HasMaxLength(255);
 
-        // Relacionamento um para muitos com Role
-        builder.HasMany(d => d.Roles)  // Um departamento tem muitos roles
-            .WithOne(r => r.Department)  // Cada role tem um único departamento
-            .HasForeignKey(r => r.DepartmentId)  // Definindo a chave estrangeira
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(d => d.DepartmentUsers)
-            .WithOne(du => du.Department)
-            .HasForeignKey(du => du.DepartmentId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(d => d.IsActive)
+               .IsRequired()
+               .HasDefaultValue(false);
     }
 }

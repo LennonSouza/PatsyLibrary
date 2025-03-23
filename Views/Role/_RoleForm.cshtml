@@ -1,0 +1,36 @@
+﻿@model PatsyLibrary.Models.Role
+
+<form id="roleForm" action="@Url.Action(Model.RoleId == 0 ? "Insert" : "Update", "Role")" method="post">
+    <input type="hidden" name="RoleId" value="@Model.RoleId" />
+
+    <div class="mb-3">
+        <label for="Name" class="form-label">Nome do Cargo</label>
+        <input type="text" id="Name" name="Name" class="form-control" value="@Model.Name" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="DepartmentId" class="form-label">Departamento</label>
+        <select id="DepartmentId" name="DepartmentId" class="form-control" required>
+            <option value="">Selecione um departamento</option>
+            @foreach (var department in ViewBag.DepartmentList)
+            {
+                if (Model.DepartmentId == department.DepartmentId)
+                {
+                    <option value="@department.DepartmentId" selected>@department.Name</option>
+                }
+                else
+                {
+                    <option value="@department.DepartmentId">@department.Name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+        <input type="hidden" name="IsActive" value="false" />
+        <label class="form-check-label" for="IsActive">Ativo</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>

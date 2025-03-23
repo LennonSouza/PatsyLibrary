@@ -1,0 +1,47 @@
+﻿@model RegisterUserViewModel
+
+@{
+    Layout = null;
+}
+
+<form id="userRegisterForm" action="@Url.Action("Register", "Account")" method="post" class="needs-validation" novalidate>
+    <!-- UserName -->
+    <div class="mb-3">
+        <label for="userName" class="form-label">Nome de Usuário</label>
+        <input asp-for="UserName" class="form-control" placeholder="Nome de usuário" required />
+        <span asp-validation-for="UserName" class="text-danger"></span>
+    </div>
+
+    <!-- Email -->
+    <div class="mb-3">
+        <label for="email" class="form-label">E-mail</label>
+        <input asp-for="Email" class="form-control" placeholder="E-mail" required />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <!-- Password -->
+    <div class="mb-3">
+        <label for="password" class="form-label">Senha</label>
+        <input asp-for="Password" type="password" class="form-control" placeholder="Senha" required />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <!-- Confirm Password -->
+    <div class="mb-3">
+        <label for="confirmPassword" class="form-label">Confirmar Senha</label>
+        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirmar Senha" required />
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+
+    <!-- Department -->
+    <div class="mb-3">
+        <label for="departmentId" class="form-label">Departamento</label>
+        <select asp-for="DepartmentId" class="form-select" asp-items="Model.Departments" required>
+            <option value="">Selecione um departamento</option>
+        </select>
+        <span asp-validation-for="DepartmentId" class="text-danger"></span>
+    </div>
+
+    <!-- Botão de Registro -->
+    <button type="submit" class="btn btn-primary">Registrar</button>
+</form>

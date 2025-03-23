@@ -67,10 +67,6 @@
 <!-- Carregar o jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Carregar o SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.4/dist/sweetalert2.all.min.js"></script>
-
-
 <!-- Scripts -->
 <script>
     $(document).ready(function () {
@@ -97,31 +93,34 @@
         $(".btn-delete").click(function () {
             var id = $(this).data("id");
 
-            if (confirm("Tem certeza que deseja excluir esta editora?")) {
-                $.post("@Url.Action("Delete", "BookPublisher")", { id: id }, function (response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sucesso!',
-                            text: response.message
-                        }).then(() => {
-                            location.reload();
+            Swal.fire({
+                title: "Tem certeza?",
+                text: "Essa ação não pode ser desfeita!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sim, excluir!",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post("@Url.Action("Delete", "BookPublisher")", { id: id })
+                        .done(function (response) {
+                             // Verifica se o response contém a mensagem de desconexão
+                        if (response && response.message && typeof response.message === 'string' && response.message.includes("Você foi desconectado")) {
+                            window.location.reload(); // Força o reload
+                        } else if (response.success) {
+                                Swal.fire("Excluído!", response.message, "success");
+                                $("button[data-id='" + id + "']").closest("tr").fadeOut(); // Remove da tabela sem recarregar
+                            } else {
+                                Swal.fire("Erro!", response.message, "error");
+                            }
+                        })
+                        .fail(function () {
+                            Swal.fire("Erro!", "Não foi possível excluir. Tente novamente.", "error");
                         });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Erro!',
-                            text: response.message
-                        });
-                    }
-                }).fail(function () {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro!',
-                        text: 'Ocorreu um erro ao tentar excluir a editora. Tente novamente.'
-                    });
-                });
-            }
+                }
+            });
         });
 
         // Submissão do formulário
@@ -181,7 +180,3 @@
         });
     });
 </script>
-
-<!-- FontAwesome para ícones -->
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">

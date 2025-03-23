@@ -1,26 +1,56 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
+using PatsyLibrary.Contracts.Services.Interfaces;
+using PatsyLibrary.Entities;
 using PatsyLibrary.Models;
+using PatsyLibrary.Services;
 
 namespace PatsyLibrary.Controllers;
 
 public class RoleController : Controller
 {
     private readonly IUnitOfWorkRepository _unitOfWorkRepository;
+    private readonly IUserService _userService;
 
-    public RoleController(IUnitOfWorkRepository unitOfWorkRepository) => _unitOfWorkRepository = unitOfWorkRepository;
+    public RoleController(IUnitOfWorkRepository unitOfWorkRepository, IUserService userService)
+    {
+        _unitOfWorkRepository = unitOfWorkRepository;
+        _userService = userService;
+    }
+
 
     // Action para exibir a página inicial (index)
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var roles = _unitOfWorkRepository.RoleRepository.GetAll.ToList();
-        return View(roles);
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
+        string usename = _userService.GetUserSession();
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+
+        IQueryable<User> users = _unitOfWorkRepository.UserRepository.GetAll;
+
+        // Obtém os departamentos filtrados
+        IQueryable<Role> rolesQuery = _unitOfWorkRepository.RoleRepository.GetAll;
+
+        // Se o usuário não tiver o departamento "1" (Master), filtra apenas os vinculados
+        if (user.DepartmentId != 1)
+        {
+            rolesQuery = rolesQuery.Where(d => d.DepartmentId == user.DepartmentId);
+        }
+
+        // Materializa a consulta para uma lista
+        List<Role> filteredRoles = await rolesQuery.ToListAsync();
+
+        return View(filteredRoles);
     }
 
     // Action para exibir o formulário de inserção
-    public IActionResult Insert()
+    public async Task<IActionResult> Insert()
     {
-        ViewBag.AccessList = _unitOfWorkRepository.AccessRepository.GetAll.ToList();
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         ViewBag.DepartmentList = _unitOfWorkRepository.DepartmentRepository.GetAll.ToList();
 
         // Retorna a view parcial para o modal de adicionar
@@ -29,14 +59,23 @@ public class RoleController : Controller
 
     // Action para processar o formulário de inserção
     [HttpPost]
-    public async Task<IActionResult> Insert(string name, byte accessId, short departmentId)
+    public async Task<IActionResult> Insert(string name, short departmentId, bool isActive)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         if (ModelState.IsValid)
         {
+            string usename = _userService.GetUserSession();
+
+            User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+
             if (!string.IsNullOrWhiteSpace(name))
             {
                 // Criar e adicionar o acesso
-                Role role = new(name, accessId, departmentId);
+                Role role = new(name, departmentId);
+                if (isActive) role.Activate();
+                else role.Deactivate();
+
                 await _unitOfWorkRepository.RoleRepository.Insert(role);
                 await _unitOfWorkRepository.Save();
                 return Json(new { success = true, message = "Cargo adicionado com sucesso!" });
@@ -50,45 +89,54 @@ public class RoleController : Controller
     [HttpGet]
     public async Task<IActionResult> Update(short id)
     {
-        ViewBag.AccessList = _unitOfWorkRepository.AccessRepository.GetAll.ToList();
-        ViewBag.DepartmentList = _unitOfWorkRepository.DepartmentRepository.GetAll.ToList();
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
+        // Carregar a lista de departamentos
+        ViewBag.DepartmentList = await _unitOfWorkRepository.DepartmentRepository.GetAll
+            .Where(d => d.IsActive) // Opcional: apenas departamentos ativos
+            .Select(d => new { d.DepartmentId, d.Name })
+            .ToListAsync();
+
+        // Buscar o cargo pelo ID
         Role role = await _unitOfWorkRepository.RoleRepository.GetById(id);
-        if (role is null) return NotFound();
+        if (role == null)
+            return NotFound();
+
         return PartialView("_RoleForm", role);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Update(short roleId, string name, byte accessId, short departmentId)
+    public async Task<IActionResult> Update(short roleId, string name, short departmentId, bool isActive)
     {
-        if (string.IsNullOrWhiteSpace(name)) // Valida o nome
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
+        if (string.IsNullOrWhiteSpace(name))
         {
             return Json(new { success = false, message = "Nome não pode ser vazio." });
         }
 
-        // Buscar a permissão pelo ID
+        // Buscar o cargo pelo ID
         var role = await _unitOfWorkRepository.RoleRepository.GetById(roleId);
         if (role == null)
         {
             return Json(new { success = false, message = "Cargo não encontrado." });
         }
 
-        var access = await _unitOfWorkRepository.AccessRepository.GetById(accessId);
-        if (role == null)
-        {
-            return Json(new { success = false, message = "Acesso não encontrado." });
-        }
-
+        // Verificar se o departamento existe
         var department = await _unitOfWorkRepository.DepartmentRepository.GetById(departmentId);
-        if (role == null)
+        if (department == null)
         {
             return Json(new { success = false, message = "Departamento não encontrado." });
         }
 
-        // Atualizar o nome da permissão
-        role.UpdateRole(name, accessId, departmentId);
+        // Atualizar os dados do cargo
+        role.SetName(name);
+        role.SetDepartment(departmentId);
 
-        // Atualizar no banco de dados
+        if (isActive) role.Activate();
+        else role.Deactivate();
+
+        // Salvar as alterações
         await _unitOfWorkRepository.RoleRepository.Update(role);
         await _unitOfWorkRepository.Save();
 
@@ -98,11 +146,60 @@ public class RoleController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(byte id)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         Role role = await _unitOfWorkRepository.RoleRepository.GetById(id);
         if (role is null) return NotFound();
 
         await _unitOfWorkRepository.RoleRepository.Delete(role);
         await _unitOfWorkRepository.Save();
         return Json(new { success = true, message = "Cargo Excluido com sucesso!" });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ManagePermissions(short roleId)
+    {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
+        var role = await _unitOfWorkRepository.RoleRepository.GetById(roleId);
+        if (role == null)
+            return NotFound();
+
+        var allPermissions = await _unitOfWorkRepository.PermissionRepository.GetAll.ToListAsync();
+
+        return PartialView("_ManagePermissions", (Role: role, AllPermissions: allPermissions));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddPermission(short roleId, short permissionId)
+    {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
+        var role = await _unitOfWorkRepository.RoleRepository.GetById(roleId);
+        var permission = await _unitOfWorkRepository.PermissionRepository.GetById(permissionId);
+
+        if (role == null || permission == null)
+            return Json(new { success = false, message = "Cargo ou permissão não encontrados." });
+
+        var rolePermission = new RolePermission { RoleId = roleId, PermissionId = permissionId };
+        await _unitOfWorkRepository.RolePermissionRepository.Insert(rolePermission);
+        await _unitOfWorkRepository.Save();
+
+        return Json(new { success = true, message = "Permissão adicionada com sucesso!" });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemovePermission(short roleId, short permissionId) // Ajuste para short
+    {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
+        var rolePermission = await _unitOfWorkRepository.RolePermissionRepository.GetByIds(roleId, permissionId);
+        if (rolePermission == null)
+            return Json(new { success = false, message = "Permissão não associada ao cargo." });
+
+        await _unitOfWorkRepository.RolePermissionRepository.Delete(rolePermission);
+        await _unitOfWorkRepository.Save();
+
+        return Json(new { success = true, message = "Permissão removida com sucesso!" });
     }
 }

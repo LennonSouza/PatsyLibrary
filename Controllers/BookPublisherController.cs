@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Models;
+using PatsyLibrary.Services;
 
 namespace PatsyLibrary.Controllers;
 
@@ -11,15 +12,18 @@ public class BookPublisherController : Controller
     public BookPublisherController(IUnitOfWorkRepository unitOfWorkRepository) => _unitOfWorkRepository = unitOfWorkRepository;
 
     // Action para exibir a página inicial (index)
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         var bookPublishers = _unitOfWorkRepository.BookPublisherRepository.GetAll.ToList();
         return View(bookPublishers);
     }
 
     // Action para exibir o formulário de inserção
-    public IActionResult Insert()
+    public async Task<IActionResult> Insert()
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
         // Retorna a view parcial para o modal de adicionar
         return PartialView("_BookPublisherForm", new BookPublisher());
     }
@@ -28,6 +32,8 @@ public class BookPublisherController : Controller
     [HttpPost]
     public async Task<IActionResult> Insert(string name)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         if (ModelState.IsValid)
         {
             if (!string.IsNullOrWhiteSpace(name))
@@ -47,6 +53,8 @@ public class BookPublisherController : Controller
     [HttpGet]
     public async Task<IActionResult> Update(short id)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         BookPublisher bookPublisher = await _unitOfWorkRepository.BookPublisherRepository.GetById(id);
         if (bookPublisher is null) return NotFound();
         return PartialView("_BookPublisherForm", bookPublisher);
@@ -55,6 +63,8 @@ public class BookPublisherController : Controller
     [HttpPost]
     public async Task<IActionResult> Update(short bookPublisherId, string name)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         if (string.IsNullOrWhiteSpace(name)) // Valida o nome
         {
             return Json(new { success = false, message = "Nome não pode ser vazio." });
@@ -80,6 +90,8 @@ public class BookPublisherController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(short id)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         BookPublisher bookPublisher = await _unitOfWorkRepository.BookPublisherRepository.GetById(id);
         if (bookPublisher is null) return NotFound();
 

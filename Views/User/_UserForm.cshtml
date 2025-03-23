@@ -1,0 +1,72 @@
+﻿@model PatsyLibrary.ViewModels.RegisterUserViewModel
+
+<form id="userForm" action="@Url.Action(Model.UserId == 0 ? "Insert" : "Update", "User")" method="post">
+    <input type="hidden" name="UserId" value="@Model.UserId" />
+
+    <div class="mb-3">
+        <label for="UserName" class="form-label">Nome de Usuário</label>
+        <input type="text" id="UserName" name="UserName" class="form-control" value="@Model.UserName" required />
+    </div>
+
+    <div class="mb-3">
+        <label for="Email" class="form-label">Email</label>
+        <input type="email" id="Email" name="Email" class="form-control" value="@Model.Email" required />
+    </div>
+
+    @if (Model.UserId == 0) // Campos de senha apenas na inserção
+    {
+        <div class="mb-3">
+            <label for="Password" class="form-label">Senha</label>
+            <input type="password" id="Password" name="Password" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="ConfirmPassword" class="form-label">Confirmar Senha</label>
+            <input type="password" id="ConfirmPassword" name="ConfirmPassword" class="form-control" required />
+        </div>
+    }
+
+    <div class="mb-3">
+        <label for="DepartmentId" class="form-label">Departamento</label>
+        <select id="DepartmentId" name="DepartmentId" class="form-control" required>
+            <option value="">Selecione um departamento</option>
+            @foreach (var department in Model.Departments)
+            {
+                if (Model.DepartmentId.ToString() == department.Value)
+                {
+                    <option value="@department.Value" selected>@department.Text</option>
+                }
+                else
+                {
+                    <option value="@department.Value">@department.Text</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="RoleId" class="form-label">Cargo</label>
+        <select id="RoleId" name="RoleId" class="form-control" required>
+            <option value="">Selecione um cargo</option>
+            @foreach (var role in Model.Roles)
+            {
+                if (Model.RoleId.ToString() == role.Value)
+                {
+                    <option value="@role.Value" selected>@role.Text</option>
+                }
+                else
+                {
+                    <option value="@role.Value">@role.Text</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+        <input type="hidden" name="IsActive" value="false" />
+        <label class="form-check-label" for="IsActive">Ativo</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>

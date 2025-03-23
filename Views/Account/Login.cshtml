@@ -1,0 +1,100 @@
+﻿@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Login - PatsyLibrary";
+}
+
+<!-- Seção de Login -->
+<section class="login-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-lg border-0 animate__animated animate__fadeIn">
+                    <div class="card-body p-4">
+                        <h2 class="text-center mb-4 fw-bold">Faça Login</h2>
+                        <p class="text-center text-muted mb-4">Acesse sua conta na PatsyLibrary!</p>
+
+                        <!-- Formulário de Login -->
+                        <form asp-action="Login" method="post" class="needs-validation" novalidate>
+                            <!-- Email -->
+                            <div class="form-floating mb-3">
+                                <input asp-for="Username" class="form-control" placeholder="Username" required />
+                                <label asp-for="Username" class="form-label">Username</label>
+                                <span asp-validation-for="Username" class="text-danger"></span>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="form-floating mb-4">
+                                <input asp-for="Password" type="password" class="form-control" placeholder="Senha" required />
+                                <label asp-for="Password" class="form-label">Senha</label>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+
+                            <!-- Botão de Login -->
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-lg">Entrar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Estilos Customizados -->
+<style>
+    .login-section {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+    }
+
+    .card {
+        border-radius: 15px;
+        transition: transform 0.3s ease;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    .form-floating label {
+        color: #6c757d;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+</style>
+
+<!-- Scripts -->
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        // Validação de formulário no lado do cliente com Bootstrap
+        (function () {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+    </script>
+}

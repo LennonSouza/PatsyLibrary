@@ -8,6 +8,8 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
 {
     public void Configure(EntityTypeBuilder<Permission> builder)
     {
+        builder.ToTable("Permissions");
+
         // Configuração da chave primária
         builder.HasKey(p => p.PermissionId);
 
@@ -17,7 +19,9 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
 
         // Configuração das propriedades
         builder.Property(p => p.Name)
-            .IsRequired()
-            .HasMaxLength(255);  // Limite de tamanho da string, ajuste conforme necessário
+               .IsRequired()
+               .HasMaxLength(255);  // Limite de tamanho da string, ajuste conforme necessário
+
+        builder.Navigation(x => x.RolePermissions).AutoInclude();
     }
 }

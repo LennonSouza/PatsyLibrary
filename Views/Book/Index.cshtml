@@ -4,34 +4,61 @@
     ViewData["Title"] = "Gerenciamento de Livros";
 }
 
-<h2>Gerenciamento de Livros</h2>
+<h2 class="mb-4"><i class="fas fa-book"></i> @ViewData["Title"]</h2>
+
+<!-- Filtro de Pesquisa -->
+<div class="container mb-3">
+    <div class="row">
+        <div class="col-12 col-md-6">
+            <input type="text" id="bookTitleSearch" class="form-control" placeholder="Pesquisar por Título...">
+        </div>
+    </div>
+</div>
 
 <!-- Botões para adicionar livro -->
-<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#manualBookModal">Adicionar Manualmente</button>
-<button type="button" class="btn btn-primary" onclick="addBookAutomatically()">Adicionar Automaticamente</button>
+<div class="container mb-3">
+    <div class="row d-flex justify-content-between">
+        <div class="col-12 col-md-6 d-flex align-items-center mb-2 mb-md-0">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#manualBookModal">
+                <i class="fas fa-plus-circle"></i> Adicionar Manualmente
+            </button>
+        </div>
+        <div class="col-12 col-md-6 d-flex align-items-center justify-content-md-end mb-2 mb-md-0">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#isbnBookModal">
+                <i class="fas fa-robot"></i> Adicionar por ISBN
+            </button>
+        </div>
+    </div>
+</div>
 
-<table class="table mt-3">
-    <thead>
+<!-- Tabela de Livros -->
+<table class="table table-striped table-bordered mt-3">
+    <thead class="table-dark">
         <tr>
-            <th>ID</th>
             <th>Título</th>
             <th>Autor</th>
-            <th>ISBN</th>
-            <th>Departamento</th>
+            <th class="d-none d-md-table-cell">Gênero</th>
+            <th class="d-none d-md-table-cell">Editora</th>
+            <th class="d-none d-md-table-cell">Departamento</th>
             <th>Ações</th>
         </tr>
     </thead>
-    <tbody>
-        @foreach (var book in Model)
+    <tbody id="bookTableBody">
+        @foreach (Book book in Model)
         {
             <tr>
-                <td>@book.BookId</td>
-                <td>@book.Tittle</td>
+                <td>@book.Title</td>
                 <td>@book.Author</td>
-                <td>@book.Department?.Name</td>
-
-                <td>
-                    <button class="btn btn-danger btn-sm">Excluir</button>
+                <td class="d-none d-md-table-cell">@book.BookGender?.Name</td>
+                <td class="d-none d-md-table-cell">@book.BookPublisher?.Name</td>
+                <td class="d-none d-md-table-cell">@book.Department.Name</td>
+                <td class="text-center">
+                    <button class="btn btn-warning btn-sm btn-update" data-bs-toggle="modal" data-bs-target="#editBookModal" data-id="@book.BookId">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm btn-delete" data-id="@book.BookId">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 </td>
             </tr>
         }
@@ -39,7 +66,7 @@
 </table>
 
 <!-- Modal para Adicionar Livro Manualmente -->
-<div class="modal fade" id="manualBookModal" tabindex="-1" aria-labelledby="manualBookModalLabel" aria-hidden="true">
+<div class="modal fade" id="manualBookModal" tabindex="-1" aria-labelledby="manualBookModalLabel">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -57,12 +84,24 @@
                         <input type="text" id="tittle" class="form-control" required />
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Ano da publicação</label>
+                        <input type="text" id="publicationYear" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">N° Paginas</label>
+                        <input type="text" id="amountPage" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">ISBN</label>
                         <input type="text" id="isbn" class="form-control" required maxlength="13" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Sinopse</label>
                         <textarea id="sinopse" class="form-control"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Idioma</label>
+                        <textarea id="language" class="form-control"></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Departamento</label>
@@ -85,6 +124,17 @@
                             }
                         </select>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Editora</label>
+                        <select id="bookPublisherId" class="form-control">
+                            <option value="">Selecione uma editora</option>
+                            @foreach (var publisher in ViewBag.BookPublisherList)
+                            {
+                                <option value="@publisher.BookPublisherId">@publisher.Name</option>
+                            }
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-success">Salvar</button>
                 </form>
             </div>
@@ -92,51 +142,394 @@
     </div>
 </div>
 
+<!-- Modal para adicionar livro automaticamente pelo ISBN -->
+<div class="modal fade" id="isbnBookModal" tabindex="-1" aria-labelledby="isbnBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="isbnBookModalLabel">Adicionar Livro pelo ISBN</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="isbnBookForm">
+                    <div class="mb-3">
+                        <label class="form-label">ISBN</label>
+                        <input type="text" id="isbnInput" class="form-control" required maxlength="13" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Departamento</label>
+                        <select id="departmentSelect" class="form-control" required>
+                            <option value="">Selecione um departamento</option>
+                            @foreach (var department in ViewBag.DepartmentList)
+                            {
+                                <option value="@department.DepartmentId">@department.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success">Buscar e Adicionar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar Livro -->
+<div class="modal fade" id="editBookModal" tabindex="-1" aria-labelledby="editBookModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBookModalLabel">Editar Livro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBookForm">
+                    <input type="hidden" id="editBookId" />
+                    <div class="mb-3">
+                        <label class="form-label">Autor</label>
+                        <input type="text" id="editAuthor" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Título</label>
+                        <input type="text" id="editTitle" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ano da publicação</label>
+                        <input type="text" id="editPublicationYear" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">N° Paginas</label>
+                        <input type="text" id="editAmountPage" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ISBN</label>
+                        <input type="text" id="editIsbn" class="form-control" required maxlength="13" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sinopse</label>
+                        <textarea id="editSinopse" class="form-control"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Idioma</label>
+                        <textarea id="editLanguage" class="form-control"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Departamento</label>
+                        <select id="editDepartmentId" class="form-control" required>
+                            <option value="">Selecione um departamento</option>
+                            @foreach (var department in ViewBag.DepartmentList)
+                            {
+                                <option value="@department.DepartmentId">@department.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gênero</label>
+                        <select id="editBookGenderId" class="form-control">
+                            <option value="">Selecione um gênero</option>
+                            @foreach (var gender in ViewBag.BookGenderList)
+                            {
+                                <option value="@gender.BookGenderId">@gender.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Editora</label>
+                        <select id="editBookPublisherId" class="form-control">
+                            <option value="">Selecione uma editora</option>
+                            @foreach (var publisher in ViewBag.BookPublisherList)
+                            {
+                                <option value="@publisher.BookPublisherId">@publisher.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success">Atualizar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="genericModal" aria-labelledby="genericModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="genericModalLabel">Adicionar Livroo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="genericFormContainer">
+                <!-- O formulário será carregado aqui via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-    // Adiciona um livro automaticamente
-    function addBookAutomatically() {
-        const bookData = {
-            author: "Autor Automático",
-            tittle: "Título Automático",
-            sinopse: "Sinopse de um livro gerado automaticamente.",
-            isbn: "1234567890",
-            departmentId: 1
-        };
-
-        fetch('/Book/InsertAutomatic', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(bookData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-            location.reload(); // Recarregar a página para ver a lista atualizada
-        })
-        .catch(error => console.error('Erro ao adicionar livro automaticamente:', error));
-    }
-
     // Adiciona um livro manualmente via formulário
     document.getElementById("manualBookForm").addEventListener("submit", function (event) {
         event.preventDefault();
 
-        const author = document.getElementById("author").value;
-        const tittle = document.getElementById("tittle").value;
-        const sinopse = document.getElementById("sinopse").value;
-        const isbn = document.getElementById("isbn").value;
+        const author = document.getElementById("author").value.trim();
+        const tittle = document.getElementById("tittle").value.trim();
+        const publicationYear = document.getElementById("publicationYear").value;
+        const amountPage = document.getElementById("amountPage").value;
+        const sinopse = document.getElementById("sinopse").value.trim();
+        const isbn = document.getElementById("isbn").value.trim();
+        const language = document.getElementById("language").value.trim();
         const departmentId = document.getElementById("departmentId").value;
+        const bookGenderId = document.getElementById("bookGenderId").value;
+        const bookPublisherId = document.getElementById("bookPublisherId").value;
 
-            fetch('/Book/InsertManual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author, title: tittle, sinopse, isbn, departmentId })
-    })
+        Swal.fire({
+            title: 'Enviando...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
 
+        fetch('/Book/InsertManual', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ author, tittle, publicationYear, amountPage, sinopse, isbn, language, departmentId, bookGenderId, bookPublisherId })
+        })
         .then(response => response.json())
         .then(data => {
-            alert(data.message);
-            location.reload(); // Recarregar a página para ver a lista atualizada
+            Swal.close();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso!',
+                    text: data.message
+                }).then(() => {
+                    $("#manualBookModal").modal("hide");
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: data.message
+                });
+            }
         })
-        .catch(error => console.error('Erro ao adicionar livro manualmente:', error));
+        .catch(error => {
+            Swal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro!',
+                text: 'Ocorreu um erro ao salvar o livro.'
+            });
+        });
     });
+
+    //Adicionar um livro automaticamente via ISBN
+    document.getElementById("isbnBookForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const isbn = document.getElementById("isbnInput").value.trim();
+         const departmentId = document.getElementById("departmentSelect").value;
+        if (!isbn) {
+            Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Por favor, insira um ISBN válido.' });
+            return;
+        }
+
+         if (!departmentId) {
+        Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Por favor, selecione um departamento.' });
+        return;
+    }
+
+        Swal.fire({ title: 'Buscando livro...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        fetch('/Book/InsertAutomatic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isbn, departmentId })
+
+        })
+        .then(response => response.json())
+        .then(data => {
+            Swal.close();
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Sucesso!', text: data.message })
+                .then(() => {
+                    $("#isbnBookModal").modal('hide');
+                    location.reload();
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Erro!', text: data.message });
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            Swal.fire({ icon: 'error', title: 'Erro!', text: 'Ocorreu um erro ao processar a solicitação.' });
+            console.error('Erro ao adicionar livro pelo ISBN:', error);
+        });
+    });
+
+    // Carregar dados do livro para edição
+    $(".btn-update").click(function () {
+        var bookId = $(this).data("id");
+
+        fetch(`/Book/Update?id=${bookId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    $("#editBookId").val(data.book.bookId);
+                    $("#editAuthor").val(data.book.author);
+                    $("#editTitle").val(data.book.title);
+                    $("#editPublicationYear").val(data.book.publicationYear);
+                    $("#editAmountPage").val(data.book.amountPage);
+                    $("#editIsbn").val(data.book.isbn);
+                    $("#editSinopse").val(data.book.sinopse);
+                    $("#editLanguage").val(data.book.language);
+                    $("#editDepartmentId").val(data.book.departmentId);
+                    $("#editBookGenderId").val(data.book.bookGenderId);
+                    $("#editBookPublisherId").val(data.book.bookPublisherId);
+                    $("#editBookModal").modal("show");
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: 'Não foi possível carregar os dados do livro.'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: 'Erro ao buscar o livro.'
+                });
+            });
+    });
+
+    // Atualizar livro
+    document.getElementById("editBookForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const bookId = document.getElementById("editBookId").value;
+        const author = document.getElementById("editAuthor").value.trim();
+        const title = document.getElementById("editTitle").value.trim();
+        const publicationYear = document.getElementById("editPublicationYear").value;
+        const amountPage = document.getElementById("editAmountPage").value;
+        const isbn = document.getElementById("editIsbn").value.trim();
+        const sinopse = document.getElementById("editSinopse").value.trim();
+        const language = document.getElementById("editLanguage").value.trim();
+        const departmentId = document.getElementById("editDepartmentId").value;
+        const bookGenderId = document.getElementById("editBookGenderId").value;
+        const bookPublisherId = document.getElementById("editBookPublisherId").value;
+
+        console.log(JSON.stringify({ bookId, author, title, publicationYear, amountPage, isbn, sinopse, language, departmentId, bookGenderId, bookPublisherId }))
+
+        Swal.fire({
+            title: 'Atualizando...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        fetch('/Book/Update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bookId, author, title, publicationYear, amountPage, isbn, sinopse, language, departmentId, bookGenderId, bookPublisherId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            Swal.close();
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso!',
+                    text: data.message
+                }).then(() => {
+                    $("#editBookModal").modal("hide");
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: data.message
+                });
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro!',
+                text: 'Ocorreu um erro ao atualizar o livro.'
+            });
+        });
+    });
+
+       $(".btn-delete").click(function () {
+        var bookId = $(this).data("id");
+
+        // Confirmação antes de excluir
+        Swal.fire({
+            title: 'Tem certeza?',
+            text: "Você não poderá reverter esta ação!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sim, excluir!',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Excluindo...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                // Requisição AJAX para exclusão
+                fetch(`/Book/Delete?id=${bookId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close();
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sucesso!',
+                            text: data.message
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: data.message
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.close();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: 'Ocorreu um erro ao excluir o livro.'
+                    });
+                    console.error('Erro ao excluir:', error);
+                });
+            }
+        });
+    });
+
+     // Filtro de pesquisa por título
+    $("#bookTitleSearch").on("keyup", function () {
+        var value = $(this).val().toLowerCase();
+        $("#bookTableBody tr").filter(function () {
+            $(this).toggle($(this).find("td:eq(1)").text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+
 </script>

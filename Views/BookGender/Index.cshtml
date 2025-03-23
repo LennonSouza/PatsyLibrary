@@ -12,8 +12,6 @@
         <div class="col-12 col-md-4 d-flex align-items-center mb-2 mb-md-0">
             <input type="text" id="bookGenderSearch" class="form-control me-2" placeholder="Pesquisar gênero...">
         </div>
-
-        <!-- Botão de Adicionar -->
         <div class="col-12 col-md-6 d-flex align-items-center justify-content-md-end mb-2 mb-md-0">
             <button class="btn btn-primary mb-3" id="btnAddBookGender">
                 <i class="fas fa-plus-circle"></i> Adicionar Novo Gênero
@@ -64,22 +62,43 @@
 </div>
 
 <!-- Scripts -->
-<!-- Carregar o jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Carregar o SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.4/dist/sweetalert2.all.min.js"></script>
-
-
-<!-- Scripts -->
 <script>
     $(document).ready(function () {
+        // Verifica se há uma mensagem de sessão expirada ao carregar a página
+        $.get("@Url.Action("Index", "BookGender")", function (data) {
+            if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Sessão Expirada',
+                    text: data.message,
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = "@Url.Action("Login", "Account")";
+                });
+            }
+        });
+
         // Adicionar Gênero
         $("#btnAddBookGender").click(function () {
             $.get("@Url.Action("Insert", "BookGender")", function (data) {
-                $("#genericFormContainer").html(data);
-                $("#genericModalLabel").text("Adicionar Gênero");
-                $("#genericModal").modal("show");
+                // Verifica se o retorno é um JSON de sessão expirada
+                if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sessão Expirada',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = "@Url.Action("Login", "Account")";
+                    });
+                } else {
+                    $("#genericFormContainer").html(data);
+                    $("#genericModalLabel").text("Adicionar Gênero");
+                    $("#genericModal").modal("show");
+                }
             });
         });
 
@@ -87,9 +106,21 @@
         $(".btn-update").click(function () {
             var id = $(this).data("id");
             $.get("@Url.Action("Update", "BookGender")", { id: id }, function (data) {
-                $("#genericFormContainer").html(data);
-                $("#genericModalLabel").text("Editar Gênero");
-                $("#genericModal").modal("show");
+                // Verifica se o retorno é um JSON de sessão expirada
+                if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sessão Expirada',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = "@Url.Action("Login", "Account")";
+                    });
+                } else {
+                    $("#genericFormContainer").html(data);
+                    $("#genericModalLabel").text("Editar Gênero");
+                    $("#genericModal").modal("show");
+                }
             });
         });
 
@@ -97,39 +128,48 @@
         $(".btn-delete").click(function () {
             var id = $(this).data("id");
 
-            if (confirm("Tem certeza que deseja excluir este gênero?")) {
-                $.post("@Url.Action("Delete", "BookGender")", { id: id }, function (response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sucesso!',
-                            text: response.message
-                        }).then(() => {
-                            location.reload();
+            Swal.fire({
+                title: "Tem certeza?",
+                text: "Essa ação não pode ser desfeita!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sim, excluir!",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post("@Url.Action("Delete", "BookGender")", { id: id })
+                        .done(function (response) {
+                            if (response && response.message && typeof response.message === 'string' && response.message.includes("Você foi desconectado")) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Sessão Expirada',
+                                    text: response.message,
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    window.location.href = "@Url.Action("Login", "Account")";
+                                });
+                            } else if (response.success) {
+                                Swal.fire("Excluído!", response.message, "success");
+                                $("button[data-id='" + id + "']").closest("tr").remove();
+                            } else {
+                                Swal.fire("Erro!", response.message, "error");
+                            }
+                        })
+                        .fail(function () {
+                            Swal.fire("Erro!", "Não foi possível excluir. Tente novamente.", "error");
                         });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Erro!',
-                            text: response.message
-                        });
-                    }
-                }).fail(function () {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro!',
-                        text: 'Ocorreu um erro ao tentar excluir o gênero. Tente novamente.'
-                    });
-                });
-            }
+                }
+            });
         });
 
-          // Submissão do formulário de Adicionar/Editar Departamento
+        // Submissão do formulário de Adicionar/Editar Gênero
         $(document).on('submit', '#bookGenderForm', function (e) {
             e.preventDefault();
 
             var form = $(this);
-            var actionUrl = form.attr('action'); // Obtém a URL da ação
+            var actionUrl = form.attr('action');
             Swal.fire({
                 title: 'Enviando...',
                 allowOutsideClick: false,
@@ -141,28 +181,37 @@
             $.ajax({
                 url: actionUrl,
                 type: 'POST',
-                data: form.serialize(), // Envia os dados do formulário (BookGenderId e Name)
+                data: form.serialize(),
                 success: function (response) {
-                    Swal.close(); // Fecha o loader
-                    if (response.success) {
+                    Swal.close();
+                    if (response && response.message && typeof response.message === 'string' && response.message.includes("Você foi desconectado")) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Sessão Expirada',
+                            text: response.message,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.href = "@Url.Action("Login", "Account")";
+                        });
+                    } else if (response.success) {
                         Swal.fire({
                             icon: 'success',
                             title: 'Sucesso!',
                             text: response.message
                         }).then(() => {
-                            $("#genericModal").modal('hide'); // Fecha o modal
-                            location.reload(); // Recarrega a página
+                            $("#genericModal").modal('hide');
+                            location.reload();
                         });
                     } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Erro!',
-                            text: response.message || 'Erro ao editar acesso.'
+                            text: response.message || 'Erro ao processar a solicitação.'
                         });
                     }
                 },
                 error: function () {
-                    Swal.close(); // Fecha o loader
+                    Swal.close();
                     Swal.fire({
                         icon: 'error',
                         title: 'Erro!',
@@ -181,7 +230,3 @@
         });
     });
 </script>
-
-<!-- FontAwesome para ícones -->
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">

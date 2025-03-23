@@ -6,12 +6,13 @@ namespace PatsyLibrary.Contracts.DataAccess;
 public class UnitOfWorkRepository : IUnitOfWorkRepository
 {
     private IPermissionRepository _permissionRepository;
-    private IAccessRepository _accessRepository;
     private IDepartmentRepository _departmentRepository;
     private IRoleRepository _roleRepostitory;
     private IBookGenderRepository _bookGenderRepository;
     private IBookPublisherRepository _bookPublisherRepository;
     private IBookRepository _bookRepository;
+    private IUserRepository _userRepository;
+    private IRolePermissionRepository _rolePermissionRepository;
     public AppDbContext _context;
 
     public UnitOfWorkRepository(AppDbContext context) => _context = context;
@@ -19,11 +20,6 @@ public class UnitOfWorkRepository : IUnitOfWorkRepository
     public IPermissionRepository PermissionRepository
     {
         get => _permissionRepository = _permissionRepository ?? new PermissionRepository(_context);
-    }
-
-    public IAccessRepository AccessRepository
-    {
-        get => _accessRepository = _accessRepository ?? new AccessRepository(_context);
     }
 
     public IDepartmentRepository DepartmentRepository
@@ -49,6 +45,16 @@ public class UnitOfWorkRepository : IUnitOfWorkRepository
     public IBookRepository BookRepository
     {
         get => _bookRepository = _bookRepository ?? new BookRepository(_context);
+    }
+
+    public IUserRepository UserRepository
+    {
+        get => _userRepository = _userRepository ?? new UserRepository(_context);
+    }
+
+    public IRolePermissionRepository RolePermissionRepository
+    {
+        get => _rolePermissionRepository = _rolePermissionRepository ?? new RolePermissionRepository(_context);
     }
 
     public async Task Save() => await _context.SaveChangesAsync();

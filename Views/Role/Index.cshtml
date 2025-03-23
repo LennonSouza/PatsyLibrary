@@ -12,7 +12,6 @@
         <div class="col-12 col-md-4 d-flex align-items-center mb-2 mb-md-0">
             <input type="text" id="roleSearch" class="form-control me-2" placeholder="Pesquisar cargo...">
         </div>
-
         <div class="col-12 col-md-6 d-flex align-items-center justify-content-md-end mb-2 mb-md-0">
             <button class="btn btn-primary mb-3" id="btnAddRole">
                 <i class="fas fa-plus-circle"></i> Adicionar Novo Cargo
@@ -26,7 +25,7 @@
         <tr>
             <th>Nome do Cargo</th>
             <th>Departamento</th>
-            <th>Acesso</th>
+            <th class="text-center">Status</th>
             <th class="text-center">Ações</th>
         </tr>
     </thead>
@@ -36,7 +35,16 @@
             <tr>
                 <td>@role.Name</td>
                 <td>@(role.Department != null ? role.Department.Name : "Sem Departamento")</td>
-                <td>@(role.Access != null ? role.Access.Name : "Sem Acesso")</td>
+                <td class="text-center">
+                    @if (role.IsActive)
+                    {
+                        <span class="badge bg-success">Ativo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Inativo</span>
+                    }
+                </td>
                 <td class="text-center">
                     <button class="btn btn-warning btn-sm btn-update" data-id="@role.RoleId">
                         <i class="fas fa-edit"></i>
@@ -44,12 +52,14 @@
                     <button class="btn btn-danger btn-sm btn-delete" data-id="@role.RoleId">
                         <i class="fas fa-trash-alt"></i>
                     </button>
+                    <button class="btn btn-info btn-sm btn-manage-permissions" data-id="@role.RoleId">
+                        <i class="fas fa-shield-alt"></i> Permissões
+                    </button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
-
 
 <!-- Modal -->
 <div class="modal fade" id="genericModal" aria-labelledby="genericModalLabel" aria-hidden="true">
@@ -60,7 +70,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="genericFormContainer">
-                <!-- O formulário será carregado aqui via AJAX -->
+                <!-- O formulário ou gerenciamento será carregado aqui via AJAX -->
             </div>
         </div>
     </div>
@@ -68,16 +78,42 @@
 
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.4/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     $(document).ready(function () {
+        // Verifica se há uma mensagem de sessão expirada ao carregar a página
+        $.get("@Url.Action("Index", "Role")", function (data) {
+            if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Sessão Expirada',
+                    text: data.message,
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = "@Url.Action("Login", "Account")";
+                });
+            }
+        });
+
         // Adicionar Cargo
         $("#btnAddRole").click(function () {
             $.get("@Url.Action("Insert", "Role")", function (data) {
-                $("#genericFormContainer").html(data);
-                $("#genericModalLabel").text("Adicionar Cargo");
-                $("#genericModal").modal("show");
+                // Verifica se o retorno é um JSON de sessão expirada
+                if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sessão Expirada',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = "@Url.Action("Login", "Account")";
+                    });
+                } else {
+                    $("#genericFormContainer").html(data);
+                    $("#genericModalLabel").text("Adicionar Cargo");
+                    $("#genericModal").modal("show");
+                }
             });
         });
 
@@ -85,91 +121,198 @@
         $(".btn-update").click(function () {
             var id = $(this).data("id");
             $.get("@Url.Action("Update", "Role")", { id: id }, function (data) {
-                $("#genericFormContainer").html(data);
-                $("#genericModalLabel").text("Editar Cargo");
-                $("#genericModal").modal("show");
+                // Verifica se o retorno é um JSON de sessão expirada
+                if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sessão Expirada',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = "@Url.Action("Login", "Account")";
+                    });
+                } else {
+                    $("#genericFormContainer").html(data);
+                    $("#genericModalLabel").text("Editar Cargo");
+                    $("#genericModal").modal("show");
+                }
             });
         });
 
         // Excluir Cargo
         $(".btn-delete").click(function () {
             var id = $(this).data("id");
+            Swal.fire({
+                title: "Tem certeza?",
+                text: "Essa ação não pode ser desfeita!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sim, excluir!",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post("@Url.Action("Delete", "Role")", { id: id })
+                        .done(function (response) {
+                            if (response && response.message && typeof response.message === 'string' && response.message.includes("Você foi desconectado")) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Sessão Expirada',
+                                    text: response.message,
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    window.location.href = "@Url.Action("Login", "Account")";
+                                });
+                            } else if (response.success) {
+                                Swal.fire("Excluído!", response.message, "success");
+                                $("button[data-id='" + id + "']").closest("tr").remove();
+                            } else {
+                                Swal.fire("Erro!", response.message, "error");
+                            }
+                        })
+                        .fail(function () {
+                            Swal.fire("Erro!", "Não foi possível excluir. Tente novamente.", "error");
+                        });
+                }
+            });
+        });
 
-            if (confirm("Tem certeza que deseja excluir este cargo?")) {
-                $.post("@Url.Action("Delete", "Role")", { id: id }, function (response) {
+        // Gerenciar Permissões
+        $(".btn-manage-permissions").click(function () {
+            var id = $(this).data("id");
+            $.get("@Url.Action("ManagePermissions", "Role")", { roleId: id }, function (data) {
+                // Verifica se o retorno é um JSON de sessão expirada
+                if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sessão Expirada',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = "@Url.Action("Login", "Account")";
+                    });
+                } else {
+                    $("#genericFormContainer").html(data);
+                    $("#genericModalLabel").text("Gerenciar Permissões do Cargo");
+                    $("#genericModal").modal("show");
+                }
+            });
+        });
+
+        // Submissão do formulário de cargo
+        $(document).on('submit', '#roleForm', function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var actionUrl = form.attr('action');
+            Swal.fire({
+                title: 'Enviando...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            $.ajax({
+                url: actionUrl,
+                type: 'POST',
+                data: form.serialize(),
+                success: function (response) {
+                    Swal.close();
                     if (response.success) {
                         Swal.fire({
                             icon: 'success',
                             title: 'Sucesso!',
-                            text: response.message
+                            text: response.message,
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                $("#genericModal").modal('hide');
+                                location.reload();
+                            }
+                        });
+                    } else if (response.message && response.message.includes("Você foi desconectado")) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Sessão Expirada',
+                            text: response.message,
+                            confirmButtonText: 'OK'
                         }).then(() => {
-                            location.reload();
+                            window.location.href = "@Url.Action("Login", "Account")";
                         });
                     } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Erro!',
-                            text: response.message
+                            text: response.message || 'Erro ao editar o cargo.',
+                            confirmButtonText: 'OK'
                         });
                     }
-                }).fail(function () {
+                },
+                error: function () {
+                    Swal.close();
                     Swal.fire({
                         icon: 'error',
                         title: 'Erro!',
-                        text: 'Ocorreu um erro ao tentar excluir o cargo. Tente novamente.'
-                    });
-                });
-            }
-        });
-
-           $(document).on('submit', '#roleForm', function (e) {
-        e.preventDefault();
-
-        var form = $(this);
-        var actionUrl = form.attr('action');
-
-        Swal.fire({
-            title: 'Enviando...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        $.ajax({
-            url: actionUrl,
-            type: 'POST',
-            data: form.serialize(), // Envia os dados do formulário
-            success: function (response) {
-                Swal.close();
-                if (response.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Sucesso!',
-                        text: response.message
-                    }).then(() => {
-                        $("#genericModal").modal('hide');
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro!',
-                        text: response.message || 'Erro ao editar o cargo.'
+                        text: 'Ocorreu um erro ao processar a solicitação. Tente novamente.',
+                        confirmButtonText: 'OK'
                     });
                 }
-            },
-            error: function () {
-                Swal.close();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro!',
-                    text: 'Ocorreu um erro ao processar a solicitação. Tente novamente.'
-                });
-            }
+            });
         });
-    });
 
+        // Adicionar/Remover Permissões
+        $(document).on('click', '.add-permission, .remove-permission', function () {
+            var roleId = $(this).data("role-id");
+            var permissionId = $(this).data("permission-id");
+            var isAdding = $(this).hasClass("add-permission");
+            var action = isAdding ? "AddPermission" : "RemovePermission";
+            var $button = $(this);
+
+            Swal.fire({
+                title: 'Processando...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.post("@Url.Action("AddPermission", "Role")".replace("AddPermission", action), { roleId: roleId, permissionId: permissionId })
+                .done(function (response) {
+                    Swal.close();
+                    if (response && response.message && typeof response.message === 'string' && response.message.includes("Você foi desconectado")) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Sessão Expirada',
+                            text: response.message,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.href = "@Url.Action("Login", "Account")";
+                        });
+                    } else if (response.success) {
+                        if (isAdding) {
+                            $button.removeClass("add-permission btn-success").addClass("remove-permission btn-danger").text("Remover");
+                        } else {
+                            $button.removeClass("remove-permission btn-danger").addClass("add-permission btn-success").text("Adicionar");
+                        }
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: response.message || 'Erro ao processar a permissão.',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .fail(function () {
+                    Swal.close();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: 'Ocorreu um erro ao processar a solicitação.',
+                        confirmButtonText: 'OK'
+                    });
+                });
+        });
 
         // Filtro de nome (Pesquisa)
         $("#roleSearch").on("keyup", function () {
@@ -180,7 +323,3 @@
         });
     });
 </script>
-
-<!-- FontAwesome para ícones -->
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">

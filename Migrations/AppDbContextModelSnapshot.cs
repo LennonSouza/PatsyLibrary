@@ -2,8 +2,8 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PatsyLibrary.Data;
 
 #nullable disable
@@ -18,67 +18,58 @@ namespace PatsyLibrary.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "9.0.2")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("PatsyLibrary.Models.Access", b =>
+            modelBuilder.Entity("PatsyLibrary.Entities.RolePermission", b =>
                 {
-                    b.Property<byte>("AccessId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<byte>("AccessId"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("AccessId");
-
-                    b.ToTable("Accesses");
-                });
-
-            modelBuilder.Entity("PatsyLibrary.Models.AccessPermission", b =>
-                {
-                    b.Property<byte>("AccessId")
-                        .HasColumnType("tinyint");
+                    b.Property<short>("RoleId")
+                        .HasColumnType("smallint");
 
                     b.Property<short>("PermissionId")
                         .HasColumnType("smallint");
 
-                    b.HasKey("AccessId", "PermissionId");
+                    b.HasKey("RoleId", "PermissionId");
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("AccessPermissions", (string)null);
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("PatsyLibrary.Models.Book", b =>
                 {
                     b.Property<int>("BookId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BookId"));
 
                     b.Property<short>("AmountPage")
                         .HasColumnType("smallint");
 
                     b.Property<string>("Author")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<short?>("BookGenderId")
                         .HasColumnType("smallint");
 
+                    b.Property<short?>("BookPublisherId")
+                        .HasColumnType("smallint");
+
+                    b.Property<int?>("BookStatusBookId")
+                        .HasColumnType("integer");
+
+                    b.Property<short?>("BookStatusId")
+                        .HasColumnType("smallint");
+
                     b.Property<byte[]>("CoverImage")
-                        .HasColumnType("varbinary(max)");
+                        .HasColumnType("bytea");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<short>("DepartmentId")
                         .HasColumnType("smallint");
@@ -86,32 +77,36 @@ namespace PatsyLibrary.Migrations
                     b.Property<string>("ISBN")
                         .IsRequired()
                         .HasMaxLength(13)
-                        .HasColumnType("nvarchar(13)");
+                        .HasColumnType("character varying(13)");
 
                     b.Property<string>("Language")
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("character varying(30)");
 
                     b.Property<DateTime>("LastUpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PublicationYear")
                         .HasMaxLength(4)
-                        .HasColumnType("nvarchar(4)");
+                        .HasColumnType("character varying(4)");
 
                     b.Property<string>("Sinopse")
                         .IsRequired()
                         .HasMaxLength(5000)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("character varying(5000)");
 
-                    b.Property<string>("Tittle")
+                    b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("BookId");
 
                     b.HasIndex("BookGenderId");
+
+                    b.HasIndex("BookPublisherId");
+
+                    b.HasIndex("BookStatusBookId");
 
                     b.HasIndex("DepartmentId");
 
@@ -124,12 +119,12 @@ namespace PatsyLibrary.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<short>("BookGenderId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("BookGenderId"));
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("BookGenderId");
 
@@ -142,12 +137,12 @@ namespace PatsyLibrary.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<short>("BookPublisherId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("BookPublisherId"));
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("BookPublisherId");
 
@@ -157,35 +152,35 @@ namespace PatsyLibrary.Migrations
             modelBuilder.Entity("PatsyLibrary.Models.BookStatus", b =>
                 {
                     b.Property<int>("BookId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Comments")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<bool>("IsAvailable")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Provenance")
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("character varying(255)");
 
                     b.Property<float>("Rating")
                         .HasColumnType("real");
 
                     b.Property<DateTime?>("ReadDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Shelf")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("ShelfLetter")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("character varying(10)");
 
                     b.HasKey("BookId");
 
@@ -198,31 +193,21 @@ namespace PatsyLibrary.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<short>("DepartmentId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("DepartmentId"));
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("DepartmentId");
 
-                    b.ToTable("Departments");
-                });
-
-            modelBuilder.Entity("PatsyLibrary.Models.DepartmentUser", b =>
-                {
-                    b.Property<short>("DepartmentId")
-                        .HasColumnType("smallint");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("DepartmentId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("DepartmentUsers");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("PatsyLibrary.Models.Permission", b =>
@@ -231,16 +216,16 @@ namespace PatsyLibrary.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<short>("PermissionId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("PermissionId"));
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("PermissionId");
 
-                    b.ToTable("Permissions");
+                    b.ToTable("Permissions", (string)null);
                 });
 
             modelBuilder.Entity("PatsyLibrary.Models.Role", b =>
@@ -249,73 +234,86 @@ namespace PatsyLibrary.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<short>("RoleId"));
-
-                    b.Property<byte>("AccessId")
-                        .HasColumnType("tinyint");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("RoleId"));
 
                     b.Property<short>("DepartmentId")
                         .HasColumnType("smallint");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("RoleId");
 
-                    b.HasIndex("AccessId");
-
                     b.HasIndex("DepartmentId");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("PatsyLibrary.Models.User", b =>
                 {
                     b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserId"));
+
+                    b.Property<short>("DepartmentId")
+                        .HasColumnType("smallint");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PassWord")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<short>("RoleId")
+                        .HasColumnType("smallint");
 
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("UserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("PatsyLibrary.Models.AccessPermission", b =>
+            modelBuilder.Entity("PatsyLibrary.Entities.RolePermission", b =>
                 {
-                    b.HasOne("PatsyLibrary.Models.Access", "Access")
-                        .WithMany()
-                        .HasForeignKey("AccessId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("PatsyLibrary.Models.Permission", "Permission")
-                        .WithMany()
+                        .WithMany("RolePermissions")
                         .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Access");
+                    b.HasOne("PatsyLibrary.Models.Role", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Permission");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("PatsyLibrary.Models.Book", b =>
@@ -325,13 +323,25 @@ namespace PatsyLibrary.Migrations
                         .HasForeignKey("BookGenderId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("PatsyLibrary.Models.BookPublisher", "BookPublisher")
+                        .WithMany("Books")
+                        .HasForeignKey("BookPublisherId");
+
+                    b.HasOne("PatsyLibrary.Models.BookStatus", "BookStatus")
+                        .WithMany("Books")
+                        .HasForeignKey("BookStatusBookId");
+
                     b.HasOne("PatsyLibrary.Models.Department", "Department")
                         .WithMany("Books")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("BookGender");
+
+                    b.Navigation("BookPublisher");
+
+                    b.Navigation("BookStatus");
 
                     b.Navigation("Department");
                 });
@@ -345,45 +355,47 @@ namespace PatsyLibrary.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PatsyLibrary.Models.DepartmentUser", b =>
-                {
-                    b.HasOne("PatsyLibrary.Models.Department", "Department")
-                        .WithMany("DepartmentUsers")
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PatsyLibrary.Models.User", "User")
-                        .WithMany("DepartmentUsers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Department");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("PatsyLibrary.Models.Role", b =>
                 {
-                    b.HasOne("PatsyLibrary.Models.Access", "Access")
-                        .WithMany()
-                        .HasForeignKey("AccessId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("PatsyLibrary.Models.Department", "Department")
                         .WithMany("Roles")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Access");
 
                     b.Navigation("Department");
                 });
 
+            modelBuilder.Entity("PatsyLibrary.Models.User", b =>
+                {
+                    b.HasOne("PatsyLibrary.Models.Department", "Department")
+                        .WithMany("Users")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PatsyLibrary.Models.Role", "Role")
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("PatsyLibrary.Models.BookGender", b =>
+                {
+                    b.Navigation("Books");
+                });
+
+            modelBuilder.Entity("PatsyLibrary.Models.BookPublisher", b =>
+                {
+                    b.Navigation("Books");
+                });
+
+            modelBuilder.Entity("PatsyLibrary.Models.BookStatus", b =>
                 {
                     b.Navigation("Books");
                 });
@@ -392,14 +404,21 @@ namespace PatsyLibrary.Migrations
                 {
                     b.Navigation("Books");
 
-                    b.Navigation("DepartmentUsers");
-
                     b.Navigation("Roles");
+
+                    b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("PatsyLibrary.Models.User", b =>
+            modelBuilder.Entity("PatsyLibrary.Models.Permission", b =>
                 {
-                    b.Navigation("DepartmentUsers");
+                    b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("PatsyLibrary.Models.Role", b =>
+                {
+                    b.Navigation("RolePermissions");
+
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }

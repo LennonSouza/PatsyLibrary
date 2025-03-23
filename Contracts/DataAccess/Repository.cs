@@ -20,7 +20,6 @@ public class Repository<T, TKey> : IRepository<T, TKey> where T : class
         var entry = _context.Entry(entity);
         if (entry.State == EntityState.Detached)
         {
-            _context.Set<T>().Attach(entity);
             entry.State = EntityState.Modified;
         }
 

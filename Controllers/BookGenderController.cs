@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Models;
+using PatsyLibrary.Services;
 
 namespace PatsyLibrary.Controllers;
 
@@ -11,15 +12,18 @@ public class BookGenderController : Controller
     public BookGenderController(IUnitOfWorkRepository unitOfWorkRepository) => _unitOfWorkRepository = unitOfWorkRepository;
 
     // Action para exibir a página inicial (index)
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         var bookGenders = _unitOfWorkRepository.BookGenderRepository.GetAll.ToList();
         return View(bookGenders);
     }
 
     // Action para exibir o formulário de inserção
-    public IActionResult Insert()
+    public async Task<IActionResult> Insert()
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
         // Retorna a view parcial para o modal de adicionar
         return PartialView("_BookGenderForm", new BookGender());
     }
@@ -28,6 +32,7 @@ public class BookGenderController : Controller
     [HttpPost]
     public async Task<IActionResult> Insert(string name)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
         if (ModelState.IsValid)
         {
             if (!string.IsNullOrWhiteSpace(name))
@@ -47,6 +52,8 @@ public class BookGenderController : Controller
     [HttpGet]
     public async Task<IActionResult> Update(short id)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         BookGender bookGender = await _unitOfWorkRepository.BookGenderRepository.GetById(id);
         if (bookGender is null) return NotFound();
         return PartialView("_BookGenderForm", bookGender);
@@ -55,6 +62,8 @@ public class BookGenderController : Controller
     [HttpPost]
     public async Task<IActionResult> Update(short bookGenderId, string name)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         if (string.IsNullOrWhiteSpace(name)) // Valida o nome
         {
             return Json(new { success = false, message = "Nome não pode ser vazio." });
@@ -80,6 +89,8 @@ public class BookGenderController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(short id)
     {
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+
         BookGender bookGender = await _unitOfWorkRepository.BookGenderRepository.GetById(id);
         if (bookGender is null) return NotFound();
 

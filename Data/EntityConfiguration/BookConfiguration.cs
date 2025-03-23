@@ -18,11 +18,11 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
         // Configuração das propriedades
         builder.Property(b => b.Author)
             .IsRequired()
-            .HasMaxLength(255);
+            .HasMaxLength(30);
 
-        builder.Property(b => b.Tittle)
+        builder.Property(b => b.Title)
             .IsRequired()
-            .HasMaxLength(255);
+            .HasMaxLength(50);
 
         builder.Property(b => b.PublicationYear)
             .HasMaxLength(4);  // Para o ano, max length de 4 caracteres
@@ -48,11 +48,12 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
 
         // Relacionamento com o Department (1:N)
         builder.HasOne(b => b.Department)  // Especifica explicitamente a propriedade de navegação
-               .WithMany(d => d.Books)        // Especifica que um departamento pode ter muitos livros
-               .HasForeignKey(b => b.DepartmentId) // Define a chave estrangeira corretamente
-               .OnDelete(DeleteBehavior.Cascade);
+               .WithMany(d => d.Books)     // Especifica que um departamento pode ter muitos livros
+               .HasForeignKey(b => b.DepartmentId)  // Define a chave estrangeira corretamente
+               .OnDelete(DeleteBehavior.Restrict); // Impede a exclusão do departamento se houver livros associados
 
-        // Relacionamento opcional com o BookGender (N:1)
+
+        // Relacionamento com o BookGender (N:1)
         builder.HasOne(b => b.BookGender)
                .WithMany(bg => bg.Books)  // Certifique-se de que BookGender tem uma coleção Books
                .HasForeignKey(b => b.BookGenderId)

@@ -12,8 +12,6 @@
         <div class="col-12 col-md-4 d-flex align-items-center mb-2 mb-md-0">
             <input type="text" id="departmentSearch" class="form-control me-2" placeholder="Pesquisar departamento...">
         </div>
-
-        <!-- Ajustando o alinhamento do botão -->
         <div class="col-12 col-md-6 d-flex align-items-center justify-content-md-end mb-2 mb-md-0">
             <button class="btn btn-primary mb-3" id="btnAddDepartment">
                 <i class="fas fa-plus-circle"></i> Adicionar Novo Departamento
@@ -26,6 +24,7 @@
     <thead class="table-dark">
         <tr>
             <th>Nome do Departamento</th>
+            <th class="text-center">Status</th>
             <th class="text-center">Ações</th>
         </tr>
     </thead>
@@ -34,6 +33,16 @@
         {
             <tr>
                 <td>@department.Name</td>
+                <td class="text-center">
+                    @if (department.IsActive)
+                    {
+                        <span class="badge bg-success">Ativo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Inativo</span>
+                    }
+                </td>
                 <td class="text-center">
                     <button class="btn btn-warning btn-sm btn-update" data-id="@department.DepartmentId">
                         <i class="fas fa-edit"></i>
@@ -63,72 +72,112 @@
 </div>
 
 <!-- Scripts -->
-<!-- Carregar o jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Carregar o SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.4/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     $(document).ready(function () {
+        // Verifica se há uma mensagem de sessão expirada ao carregar a página
+        $.get("@Url.Action("Index", "Department")", function (data) {
+            if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Sessão Expirada',
+                    text: data.message,
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = "@Url.Action("Login", "Account")";
+                });
+            }
+        });
+
         // Adicionar Departamento
         $("#btnAddDepartment").click(function () {
             $.get("@Url.Action("Insert", "Department")", function (data) {
-                $("#genericFormContainer").html(data); // Carrega o formulário no modal
-                $("#genericModalLabel").text("Adicionar Departamento"); // Título do modal
-                $("#genericModal").modal("show"); // Abre o modal
+                // Verifica se o retorno é um JSON de sessão expirada
+                if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sessão Expirada',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = "@Url.Action("Login", "Account")";
+                    });
+                } else {
+                    $("#genericFormContainer").html(data);
+                    $("#genericModalLabel").text("Adicionar Departamento");
+                    $("#genericModal").modal("show");
+                }
             });
         });
 
         // Editar Departamento
         $(".btn-update").click(function () {
-            var id = $(this).data("id");
-
-            console.log(id)
-            $.get("@Url.Action("Update", "Department")", { id: id }, function (data) {
-                $("#genericFormContainer").html(data); // Carrega o formulário no modal
-                $("#genericModalLabel").text("Editar Departamento"); // Título do modal
-                $("#genericModal").modal("show"); // Abre o modal
+            var departmentId = $(this).data("id");
+            $.get("@Url.Action("Update", "Department")", { departmentId: departmentId }, function (data) {
+                // Verifica se o retorno é um JSON de sessão expirada
+                if (data && data.success === false && data.message && data.message.includes("Você foi desconectado")) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sessão Expirada',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = "@Url.Action("Login", "Account")";
+                    });
+                } else {
+                    $("#genericFormContainer").html(data);
+                    $("#genericModalLabel").text("Editar Departamento");
+                    $("#genericModal").modal("show");
+                }
             });
         });
 
         // Excluir Departamento
         $(".btn-delete").click(function () {
-            var id = $(this).data("id");
-
-            if (confirm("Tem certeza que deseja excluir este departamento?")) {
-                $.post("@Url.Action("Delete", "Department")", { id: id }, function (response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sucesso!',
-                            text: response.message
-                        }).then(() => {
-                            location.reload(); // Recarrega a página após a exclusão
+            var departmentId = $(this).data("id");
+            Swal.fire({
+                title: "Tem certeza?",
+                text: "Essa ação não pode ser desfeita!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sim, excluir!",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post("@Url.Action("Delete", "Department")", { departmentId: departmentId })
+                        .done(function (response) {
+                            if (response && response.message && typeof response.message === 'string' && response.message.includes("Você foi desconectado")) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Sessão Expirada',
+                                    text: response.message,
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    window.location.href = "@Url.Action("Login", "Account")";
+                                });
+                            } else if (response.success) {
+                                Swal.fire("Excluído!", response.message, "success");
+                                $("button[data-id='" + departmentId + "']").closest("tr").remove();
+                            } else {
+                                Swal.fire("Erro!", response.message, "error");
+                            }
+                        })
+                        .fail(function () {
+                            Swal.fire("Erro!", "Não foi possível excluir. Tente novamente.", "error");
                         });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Erro!',
-                            text: response.message
-                        });
-                    }
-                }).fail(function () {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro!',
-                        text: 'Ocorreu um erro ao tentar excluir o departamento. Tente novamente.'
-                    });
-                });
-            }
+                }
+            });
         });
 
-         // Submissão do formulário de Adicionar/Editar Departamento
+        // Submissão do formulário
         $(document).on('submit', '#departmentForm', function (e) {
             e.preventDefault();
-
             var form = $(this);
-            var actionUrl = form.attr('action'); // Obtém a URL da ação
+            var actionUrl = form.attr('action');
             Swal.fire({
                 title: 'Enviando...',
                 allowOutsideClick: false,
@@ -140,28 +189,37 @@
             $.ajax({
                 url: actionUrl,
                 type: 'POST',
-                data: form.serialize(), // Envia os dados do formulário (DepartmentId e Name)
+                data: form.serialize(),
                 success: function (response) {
-                    Swal.close(); // Fecha o loader
-                    if (response.success) {
+                    Swal.close();
+                    if (response && response.message && typeof response.message === 'string' && response.message.includes("Você foi desconectado")) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Sessão Expirada',
+                            text: response.message,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.href = "@Url.Action("Login", "Account")";
+                        });
+                    } else if (response.success) {
                         Swal.fire({
                             icon: 'success',
                             title: 'Sucesso!',
                             text: response.message
                         }).then(() => {
-                            $("#genericModal").modal('hide'); // Fecha o modal
-                            location.reload(); // Recarrega a página
+                            $("#genericModal").modal('hide');
+                            location.reload();
                         });
                     } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Erro!',
-                            text: response.message || 'Erro ao editar acesso.'
+                            text: response.message || 'Erro ao processar a solicitação.'
                         });
                     }
                 },
                 error: function () {
-                    Swal.close(); // Fecha o loader
+                    Swal.close();
                     Swal.fire({
                         icon: 'error',
                         title: 'Erro!',
@@ -180,6 +238,3 @@
         });
     });
 </script>
-
-<!-- FontAwesome para ícones -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
