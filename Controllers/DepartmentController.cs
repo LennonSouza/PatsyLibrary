@@ -23,14 +23,29 @@ public class DepartmentController : Controller
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
         User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
         if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
 
-        if (user.RoleId != 1) return PartialView("AccessDenied");
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
 
-        List<Department> department = _unitOfWorkRepository.DepartmentRepository.GetAll.ToList();
-        return View(department);
+        // Obtém todas as permissões disponíveis
+        List<Department> todosDepartamentos = _unitOfWorkRepository.DepartmentRepository.GetAll.ToList();
+
+        // Verifica se o usuário tem a permissão "Super Admin" (ID 000)
+        if (userPermissions.Contains(000)) return View(todosDepartamentos);
+
+        // Verifica se o usuário tem a permissão "Ver Permissões" (ID 100)
+        if (!userPermissions.Contains(200)) return PartialView("AccessDenied");
+
+        // Filtra apenas o departamento do usuário
+        List<Department> departamentosDoUsuario = todosDepartamentos
+            .Where(d => d.DepartmentId == user.DepartmentId)
+            .ToList();
+
+        return View(departamentosDoUsuario);
     }
 
     [HttpGet]
@@ -39,12 +54,21 @@ public class DepartmentController : Controller
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
         User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
         if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
 
-        if (user.RoleId != 1) return PartialView("AccessDenied");
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
 
+        // Obtém todas as permissões disponíveis
+        List<Department> todosDepartamentos = _unitOfWorkRepository.DepartmentRepository.GetAll.ToList();
+
+        // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 201, supondo que seja essa)
+        if (!userPermissions.Contains(201) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para adicionar departamentos." });
+
+        // Retorna o formulário para adicionar um novo departamento
         return PartialView("_DepartmentForm", new Department());
     }
 
@@ -54,6 +78,18 @@ public class DepartmentController : Controller
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Erro => Nome não pode ser vazio ou nulo." });
+
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Editar Departamentos" (ID 201, supondo que seja essa)
+        if (!userPermissions.Contains(202) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar departamentos." });
 
         try
         {
@@ -82,11 +118,16 @@ public class DepartmentController : Controller
         if (departmentId < 1) return Json(new { success = false, message = "Erro => Departamento não encontrada" });
 
         string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
         User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
         if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
 
-        if (user.RoleId != 1) return PartialView("AccessDenied");
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Editar Departamentos" (ID 201, supondo que seja essa)
+        if (!userPermissions.Contains(202) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar departamentos." });
 
         Department department = await _unitOfWorkRepository.DepartmentRepository.GetById(departmentId);
         if (department is null) return Json(new { success = false, message = "Erro => Departamento não encontrada" });
@@ -101,6 +142,19 @@ public class DepartmentController : Controller
 
         if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Nome não pode ser vazio." });
         if (departmentId < 1) return Json(new { success = false, message = "Erro => Departamento não encontrada" });
+
+        string username = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(username)) return Json(new { success = false, message = "Acesso negado: usuário não autenticado." });
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(username);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        HashSet<short> userPermissions = user.Role.RolePermissions
+            .Select(p => p.PermissionId)
+            .ToHashSet();
+
+        // Supondo que a permissão para editar departamentos seja 202 ou Super Admin (0)
+        if (!userPermissions.Contains(202) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar departamentos." });
 
         // Buscar a permissão pelo ID
         Department department = await _unitOfWorkRepository.DepartmentRepository.GetById(departmentId);
@@ -133,8 +187,21 @@ public class DepartmentController : Controller
 
         if (departmentId < 1) return Json(new { success = false, message = "Erro => Departamento não encontrada" });
 
+        string username = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(username)) return Json(new { success = false, message = "Acesso negado: usuário não autenticado." });
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(username);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        HashSet<short> userPermissions = user.Role.RolePermissions
+            .Select(p => p.PermissionId)
+            .ToHashSet();
+
+        // Supondo que a permissão para editar departamentos seja 202 ou Super Admin (0)
+        if (!userPermissions.Contains(203) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar departamentos." });
+
         Department department = await _unitOfWorkRepository.DepartmentRepository.GetById(departmentId);
-        if (department is null) return NotFound();
+        if (department is null) return Json(new { success = false, message = "Departamento não encontrado." });
 
         try
         {

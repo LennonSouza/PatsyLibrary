@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@inject IUserService UserService
+@inject IUnitOfWorkRepository UnitOfWorkRepository
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -24,18 +27,36 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        @if (Context.Session.GetString("UserName") != null)
+                        @{
+                            string username = UserService.GetUserSession();
+                            HashSet<short> userPermissions = null; // Declara fora do bloco para escopo maior
+                            if (username != null)
+                            {
+                                var user = await UnitOfWorkRepository.UserRepository.GetbyUserName(username);
+                                userPermissions = user?.Role?.RolePermissions
+                                .Select(rp => rp.PermissionId)
+                                .ToHashSet() ?? new HashSet<short>();
+                            }
+                        }
+                        @if (username != null && userPermissions != null)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Usuários</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Permission" asp-action="Index">Permissões</a>
-                            </li>
 
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Department" asp-action="Index">Departamento</a>
-                            </li>
+                            @if (userPermissions.Contains(000) || userPermissions.Contains(100)) // Verifica permissão "Ver Permissões"
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Permission" asp-action="Index">Permissões</a>
+                                </li>
+                            }
+
+                            @if (userPermissions.Contains(000) || userPermissions.Contains(200))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Department" asp-action="Index">Departamento</a>
+                                </li>
+                            }
 
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Role" asp-action="Index">Cargo</a>

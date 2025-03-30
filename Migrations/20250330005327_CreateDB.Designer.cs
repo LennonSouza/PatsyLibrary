@@ -12,7 +12,7 @@ using PatsyLibrary.Data;
 namespace PatsyLibrary.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250323170252_CreateDB")]
+    [Migration("20250330005327_CreateDB")]
     partial class CreateDB
     {
         /// <inheritdoc />
@@ -216,10 +216,7 @@ namespace PatsyLibrary.Migrations
             modelBuilder.Entity("PatsyLibrary.Models.Permission", b =>
                 {
                     b.Property<short>("PermissionId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("smallint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("PermissionId"));
 
                     b.Property<string>("Name")
                         .IsRequired()

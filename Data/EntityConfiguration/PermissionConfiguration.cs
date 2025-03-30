@@ -15,7 +15,7 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
 
         // Configura o identity autoIncrement
         builder.Property(p => p.PermissionId)
-               .ValueGeneratedOnAdd(); // Se PermissionId for auto increment, use isso.
+               .ValueGeneratedNever();
 
         // Configuração das propriedades
         builder.Property(p => p.Name)

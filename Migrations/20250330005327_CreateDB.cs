@@ -56,8 +56,7 @@ namespace PatsyLibrary.Migrations
                 name: "Permissions",
                 columns: table => new
                 {
-                    PermissionId = table.Column<short>(type: "smallint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PermissionId = table.Column<short>(type: "smallint", nullable: false),
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>

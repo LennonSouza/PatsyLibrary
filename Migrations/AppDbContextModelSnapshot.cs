@@ -213,10 +213,7 @@ namespace PatsyLibrary.Migrations
             modelBuilder.Entity("PatsyLibrary.Models.Permission", b =>
                 {
                     b.Property<short>("PermissionId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("smallint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("PermissionId"));
 
                     b.Property<string>("Name")
                         .IsRequired()

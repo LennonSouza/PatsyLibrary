@@ -3,6 +3,7 @@ using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Contracts.Services.Interfaces;
 using PatsyLibrary.Entities;
 using PatsyLibrary.Models;
+using PatsyLibrary.Services;
 using PatsyLibrary.ViewModels;
 
 namespace PatsyLibrary.Contracts.DataAccess;
@@ -31,30 +32,28 @@ public class SeedUserRoleInitial : ISeedUserRoleInitial
         User existingUser = await _unitOfWorkRepository.UserRepository.GetbyEmail(_email);
         if (existingUser is null)
         {
-            // Criar uma permissão
-            List<Permission> permissions = new List<Permission>
+            List<Permission> permissions = new();
+            foreach (var permission in DefaultPermissions.SystemPermissions)
             {
-                new("Super Admin"),
-                new("Ver Permissões"),
-                new("Ver Departamentos"),
-                new("Ver Cargos"),
-                new("Ver Usuarios")
-            };
+                Permission existingPermission = await _unitOfWorkRepository.PermissionRepository
+                    .GetAll
+                    .FirstOrDefaultAsync(p => p.PermissionId == permission.Key);
 
-            // Verificar duplicatas antes de inserir
-            List<Permission> existingPermissions = await _unitOfWorkRepository.PermissionRepository.GetAll.ToListAsync();
-            List<Permission> permissionsToAdd = permissions.Where(p => !existingPermissions.Any(ep => ep.Name == p.Name)).ToList();
+                if (existingPermission is null)
+                {
+                    Permission newPermission = new(permission.Key, permission.Value);
 
-            if (permissionsToAdd.Any())
-            {
-                await _unitOfWorkRepository.PermissionRepository.InsertRange(permissionsToAdd);
-                await _unitOfWorkRepository.Save();
+                    permissions.Add(newPermission);
+                }
             }
+
+            await _unitOfWorkRepository.PermissionRepository.InsertRange(permissions);
+            await _unitOfWorkRepository.Save();
 
             // Recarregar todas as permissões padrão para obter os IDs gerados
             permissions = await _unitOfWorkRepository.PermissionRepository
-                .GetAll.Where(p => permissions.Select(x => x.Name).Contains(p.Name))
-                .ToListAsync();
+                    .GetAll
+                    .ToListAsync();
 
             // Criar um departamento
             Department department = new("Administração");

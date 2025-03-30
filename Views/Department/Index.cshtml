@@ -1,4 +1,18 @@
 ﻿@model IEnumerable<PatsyLibrary.Models.Department>
+@inject IUserService UserService
+@inject IUnitOfWorkRepository UnitOfWorkRepository
+
+@{
+    string username = UserService.GetUserSession();
+    HashSet<short> userPermissions = null; // Declara fora do bloco para escopo maior
+    if (username != null)
+    {
+        var user = await UnitOfWorkRepository.UserRepository.GetbyUserName(username);
+        userPermissions = user?.Role?.RolePermissions
+        .Select(rp => rp.PermissionId)
+        .ToHashSet() ?? new HashSet<short>();
+    }
+}
 
 @{
     ViewData["Title"] = "Departamentos";
@@ -13,9 +27,14 @@
             <input type="text" id="departmentSearch" class="form-control me-2" placeholder="Pesquisar departamento...">
         </div>
         <div class="col-12 col-md-6 d-flex align-items-center justify-content-md-end mb-2 mb-md-0">
-            <button class="btn btn-primary mb-3" id="btnAddDepartment">
-                <i class="fas fa-plus-circle"></i> Adicionar Novo Departamento
-            </button>
+
+            @if (userPermissions.Contains(000) || userPermissions.Contains(201))
+            {
+                <button class="btn btn-primary mb-3" id="btnAddDepartment">
+                    <i class="fas fa-plus-circle"></i> Adicionar Novo Departamento
+                </button>
+            }
+          
         </div>
     </div>
 </div>
@@ -44,12 +63,21 @@
                     }
                 </td>
                 <td class="text-center">
-                    <button class="btn btn-warning btn-sm btn-update" data-id="@department.DepartmentId">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-danger btn-sm btn-delete" data-id="@department.DepartmentId">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
+
+                    @if (userPermissions.Contains(000) || userPermissions.Contains(202))
+                    {
+                        <button class="btn btn-warning btn-sm btn-update" data-id="@department.DepartmentId">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    }
+
+                    @if (userPermissions.Contains(000) || userPermissions.Contains(203))
+                    {
+                        <button class="btn btn-danger btn-sm btn-delete" data-id="@department.DepartmentId">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    }
+
                 </td>
             </tr>
         }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Contracts.Services.Interfaces;
 using PatsyLibrary.Models;
@@ -24,60 +25,82 @@ public class PermissionController : Controller
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         string usename = _userService.GetUserSession();
+        if(string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
         User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
         if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
 
-        List<Permission> permissoes = _unitOfWorkRepository.PermissionRepository.GetAll.ToList();
-
-        bool hasViewPermission = user.Role.RolePermissions.Any(p => p.PermissionId == 2);
-
-        if (user.RoleId == 1) return View(permissoes);
-
+        // Obtém as permissões do usuário a partir do seu papel
         HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
 
-        // Pega apenas as 5 primeiras permissões da lista
-        List<Permission> primeirasCinco = permissoes.Take(5).ToList();
+        // Obtém todas as permissões disponíveis
+        List<Permission> todasPermissoes = _unitOfWorkRepository.PermissionRepository.GetAll.ToList();
 
-        // Filtra as permissões que o usuário não tem
-        List<Permission> permissoesRemover = primeirasCinco
-            .Where(p => !userPermissions.Contains(p.PermissionId))
+        // Verifica se o usuário tem a permissão "Super Admin" (ID 000)
+        if (userPermissions.Contains(000)) return View(todasPermissoes);
+
+        // Verifica se o usuário tem a permissão "Ver Permissões" (ID 100)
+        if (!userPermissions.Contains(100)) return PartialView("AccessDenied");
+
+        // Filtra apenas as permissões que o usuário possui
+        List<Permission> permissoesDoUsuario = todasPermissoes
+            .Where(p => userPermissions.Contains(p.PermissionId))
             .ToList();
 
-        // Remove as permissões filtradas da lista original
-        permissoes.RemoveAll(p => permissoesRemover.Contains(p));
-
-        if (hasViewPermission) return View(permissoes);
-
-        return PartialView("AccessDenied");
+        return View(permissoesDoUsuario);
     }
 
     [HttpGet]
-    // Exibe a página para adicionar uma nova permissão
     public async Task<IActionResult> Insert()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext))
+            return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
+        // Cria uma nova permissão vazia
+        var permission = new Permission();
 
+        // Recupera todas as permissões existentes
+        var existingPermissions = _unitOfWorkRepository.PermissionRepository.GetAll.ToList();
 
-        return PartialView("_PermissionForm", new Permission());
+        // Define os intervalos de IDs com descrições
+        var permissionRanges = new Dictionary<string, string>
+        {
+            { "0XX", "Super Admin" },
+            { "1XX", "Permissões" },
+            { "2XX", "Departamentos" },
+            { "3XX", "Cargos (Roles)" },
+            { "4XX", "Usuários" }
+        };
+
+        // Passa as permissões existentes e os intervalos para a view
+        ViewData["ExistingPermissions"] = existingPermissions;
+        ViewData["PermissionRanges"] = permissionRanges;
+
+        return PartialView("_PermissionForm", permission);
     }
 
-    // Adiciona uma nova permissão
+    // Adiciona uma nova permissão (sem alterações aqui)
     [HttpPost]
-    public async Task<IActionResult> Insert(string name)
+    public async Task<IActionResult> Insert(short permissionId, string name)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext))
+            return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
-        if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Erro => Nome vazio ou nulo. Tente novamente." });
+        if (string.IsNullOrWhiteSpace(name))
+            return Json(new { success = false, message = "Erro => Nome vazio ou nulo. Tente novamente." });
+
+        // Verifica se o PermissionId já existe
+        var existingPermission = await _unitOfWorkRepository.PermissionRepository
+            .GetAll
+            .FirstOrDefaultAsync(p => p.PermissionId == permissionId);
+        if (existingPermission != null)
+            return Json(new { success = false, message = $"Erro => O ID {permissionId} já está em uso pela permissão '{existingPermission.Name}'." });
 
         try
         {
-            Permission permission = new(name);
-
+            Permission permission = new(permissionId, name);
             await _unitOfWorkRepository.PermissionRepository.Insert(permission);
             await _unitOfWorkRepository.Save();
-
             return Json(new { success = true, message = "Permissão adicionada com sucesso!" });
         }
         catch (Exception e)
@@ -85,6 +108,29 @@ public class PermissionController : Controller
             return Json(new { success = false, message = $"Erro inesperado => {e.InnerException?.Message ?? e.Message}" });
         }
     }
+
+    //// Adiciona uma nova permissão
+    //[HttpPost]
+    //public async Task<IActionResult> Insert(short permissionId, string name)
+    //{
+    //    if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+
+    //    if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Erro => Nome vazio ou nulo. Tente novamente." });
+
+    //    try
+    //    {
+    //        Permission permission = new(permissionId, name);
+
+    //        await _unitOfWorkRepository.PermissionRepository.Insert(permission);
+    //        await _unitOfWorkRepository.Save();
+
+    //        return Json(new { success = true, message = "Permissão adicionada com sucesso!" });
+    //    }
+    //    catch (Exception e)
+    //    {
+    //        return Json(new { success = false, message = $"Erro inesperado => {e.InnerException?.Message ?? e.Message}" });
+    //    }
+    //}
 
     // Exibe a página para atualizar uma permissão existente
     [HttpGet]
