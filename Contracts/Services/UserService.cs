@@ -25,6 +25,9 @@ public class UserService : IUserService
         User userExist = await _unitOfWorkRepository.UserRepository.GetbyEmail(model.Email);
         if (userExist is not null) return Result.Success(false, "Email já cadastrado.");
 
+        User userNameExist = await _unitOfWorkRepository.UserRepository.GetbyUserName(model.UserName);
+        if (userNameExist is not null) return Result.Success(false, "UserName já cadastrado.");
+
         // Criação do usuário
         User user = new(model.UserName.ToLower(), model.Password, model.Email.ToLower(), model.DepartmentId);
         if (model.IsActive)

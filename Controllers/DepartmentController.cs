@@ -38,14 +38,17 @@ public class DepartmentController : Controller
         if (userPermissions.Contains(000)) return View(todosDepartamentos);
 
         // Verifica se o usuário tem a permissão "Ver Permissões" (ID 100)
-        if (!userPermissions.Contains(200)) return PartialView("AccessDenied");
+        if (userPermissions.Contains(200))
+        {
+            // Filtra apenas o departamento do usuário
+            List<Department> departamentosDoUsuario = todosDepartamentos
+                .Where(d => d.DepartmentId == user.DepartmentId)
+                .ToList();
 
-        // Filtra apenas o departamento do usuário
-        List<Department> departamentosDoUsuario = todosDepartamentos
-            .Where(d => d.DepartmentId == user.DepartmentId)
-            .ToList();
+            return View(departamentosDoUsuario);
+        }
 
-        return View(departamentosDoUsuario);
+        return PartialView("AccessDenied");
     }
 
     [HttpGet]
@@ -198,7 +201,7 @@ public class DepartmentController : Controller
             .ToHashSet();
 
         // Supondo que a permissão para editar departamentos seja 202 ou Super Admin (0)
-        if (!userPermissions.Contains(203) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar departamentos." });
+        if (!userPermissions.Contains(203) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para excluir departamentos." });
 
         Department department = await _unitOfWorkRepository.DepartmentRepository.GetById(departmentId);
         if (department is null) return Json(new { success = false, message = "Departamento não encontrado." });

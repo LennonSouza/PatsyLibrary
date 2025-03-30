@@ -25,17 +25,32 @@ public class UserController : Controller
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return RedirectToAction("Login", "Account");
 
         string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
         User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
 
-        if(user.RoleId != 1) return PartialView("AccessDenied");
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
 
-        IQueryable<User> users = _unitOfWorkRepository.UserRepository.GetAll;
+        // Obtém todas as permissões disponíveis
+        List<User> todosUsuarios = _unitOfWorkRepository.UserRepository.GetAll.ToList();
 
-        // Materializa a consulta para uma lista
-        List<User> filteredUsers = await users.ToListAsync();
+        // Verifica se o usuário tem a permissão "Super Admin" (ID 000)
+        if (userPermissions.Contains(000)) return View(todosUsuarios);
 
-        return View(users);
+        // Somente exibir para os cargos de Supervisão
+        if (userPermissions.Contains(400))
+        {
+            // Filtra apenas o departamento do usuário
+            List<User> usuariosDoMesmoDepartamento = todosUsuarios
+                .Where(d => d.DepartmentId == user.DepartmentId)
+                .ToList();
+
+            return View(usuariosDoMesmoDepartamento);
+        }
+
+        return View();
     }
 
     [HttpGet]
@@ -44,17 +59,30 @@ public class UserController : Controller
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return Json(new { success = false, message = "Você não tem permissão para adicionar usuarios." });
 
         User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Obtém todas as permissões disponíveis
+        List<User> todosUsuarios = _unitOfWorkRepository.UserRepository.GetAll.ToList();
+
+        // Verifica se o usuário tem a permissão "Criar Usuarios" (ID 401, supondo que seja essa)
+        if (!userPermissions.Contains(401) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para adicionar usuarios." });
 
         // Obtém os departamentos filtrados
         IQueryable<Department> departmentsQuery = _unitOfWorkRepository.DepartmentRepository.GetAll.Where(d => d.IsActive);
-        if (user.DepartmentId != 1) // Se não for Master
+
+        // Se o usuário for Super Admin (ID 000), pode ver todos os departamentos
+        if (!userPermissions.Contains(000))
         {
             departmentsQuery = departmentsQuery.Where(d => d.DepartmentId == user.DepartmentId);
         }
 
-        var departments = departmentsQuery
+        List<SelectListItem> departments = departmentsQuery
             .Select(d => new SelectListItem
             {
                 Value = d.DepartmentId.ToString(),
@@ -64,12 +92,13 @@ public class UserController : Controller
 
         // Obtém os cargos filtrados
         IQueryable<Role> rolesQuery = _unitOfWorkRepository.RoleRepository.GetAll.Where(r => r.IsActive);
-        if (user.DepartmentId != 1) // Se não for Master, filtra por departamento
+
+        if (!userPermissions.Contains(000))
         {
             rolesQuery = rolesQuery.Where(r => r.DepartmentId == user.DepartmentId);
         }
 
-        var roles = rolesQuery
+        List<SelectListItem> roles = rolesQuery
             .Select(r => new SelectListItem
             {
                 Value = r.RoleId.ToString(),
@@ -93,32 +122,21 @@ public class UserController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return Json(new { success = false, message = "Você não tem permissão para adicionar usuarios." });
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Criar Usuarios" (ID 401, supondo que seja essa)
+        if (!userPermissions.Contains(401) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para adicionar usuarios." });
+
         var (isSuccess, message) = await _userService.RegisterUserAsync(model);
 
-        if (isSuccess)
-        {
-            TempData["SuccessMessage"] = message;
-            return Json(new { success = true, message = "Usuário adicionado com sucesso!" });
-        }
-
-        // Em caso de erro, recarregar os departamentos e cargos
-        string usename = _userService.GetUserSession();
-        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
-        IQueryable<Department> departmentsQuery = _unitOfWorkRepository.DepartmentRepository.GetAll.Where(d => d.IsActive);
-        IQueryable<Role> rolesQuery = _unitOfWorkRepository.RoleRepository.GetAll.Where(r => r.IsActive);
-
-        if (user.DepartmentId != 1)
-        {
-            departmentsQuery = departmentsQuery.Where(d => d.DepartmentId == user.DepartmentId);
-            rolesQuery = rolesQuery.Where(r => r.DepartmentId == user.DepartmentId);
-        }
-
-        model.Departments = departmentsQuery
-            .Select(d => new SelectListItem { Value = d.DepartmentId.ToString(), Text = d.Name })
-            .ToList();
-        model.Roles = rolesQuery
-            .Select(r => new SelectListItem { Value = r.RoleId.ToString(), Text = r.Name })
-            .ToList();
+        if (isSuccess) return Json(new { success = true, message = "Usuário adicionado com sucesso!" });
 
         return Json(new { success = false, message = "Erro ao adicionar o usuário. Tente novamente." });
     }
@@ -128,20 +146,26 @@ public class UserController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
-        var user = await _unitOfWorkRepository.UserRepository.GetById(id);
-        if (user == null)
-            return NotFound();
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return Json(new { success = false, message = "Você não tem permissão para adicionar usuarios." });
 
-        string currentUsername = _userService.GetUserSession();
-        User currentUser = await _unitOfWorkRepository.UserRepository.GetbyUserName(currentUsername);
-        if (currentUser == null)
-            return Json(new { success = false, message = "Usuário logado não encontrado." });
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Editar Usuarios" (ID 401, supondo que seja essa)
+        if (!userPermissions.Contains(402) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar usuarios." });
+
+        var userUpdate = await _unitOfWorkRepository.UserRepository.GetById(id);
+        if (userUpdate is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
 
         // Obtém os departamentos filtrados
         IQueryable<Department> departmentsQuery = _unitOfWorkRepository.DepartmentRepository.GetAll.Where(d => d.IsActive);
-        if (currentUser.DepartmentId != 1) // Se não for Master
+        if (!userPermissions.Contains(000)) // Se não for Master
         {
-            departmentsQuery = departmentsQuery.Where(d => d.DepartmentId == currentUser.DepartmentId);
+            departmentsQuery = departmentsQuery.Where(d => d.DepartmentId == user.DepartmentId);
         }
 
         var departments = departmentsQuery
@@ -154,9 +178,9 @@ public class UserController : Controller
 
         // Obtém os cargos filtrados
         IQueryable<Role> rolesQuery = _unitOfWorkRepository.RoleRepository.GetAll.Where(r => r.IsActive);
-        if (user.DepartmentId != 1) // Se não for Master, filtra por departamento
+        if (!userPermissions.Contains(000))
         {
-            rolesQuery = rolesQuery.Where(r => r.DepartmentId == user.DepartmentId);
+            rolesQuery = rolesQuery.Where(r => r.DepartmentId == userUpdate.DepartmentId);
         }
 
         var roles = rolesQuery
@@ -170,14 +194,14 @@ public class UserController : Controller
         // Mapeia o User para o RegisterUserViewModel
         var viewModel = new RegisterUserViewModel
         {
-            UserId = user.UserId,
-            UserName = user.UserName,
-            Email = user.Email,
-            DepartmentId = user.DepartmentId,
-            IsActive = user.IsActive,
+            UserId = userUpdate.UserId,
+            UserName = userUpdate.UserName,
+            Email = userUpdate.Email,
+            DepartmentId = userUpdate.DepartmentId,
+            IsActive = userUpdate.IsActive,
             Departments = departments,
             Roles = roles,
-            RoleId = user.RoleId
+            RoleId = userUpdate.RoleId
         };
 
         return PartialView("_UserForm", viewModel);
@@ -188,6 +212,12 @@ public class UserController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return Json(new { success = false, message = "Você não tem permissão para adicionar usuarios." });
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
         // Ignorar validação de Password e ConfirmPassword se estiverem vazios na atualização
         if (model.UserId != 0) // Atualização
         {
@@ -195,48 +225,36 @@ public class UserController : Controller
             ModelState.Remove("ConfirmPassword"); // Remove validação de ConfirmPassword
         }
 
-        if (!ModelState.IsValid)
-        {
-            // Repopula os departamentos em caso de erro
-            string currentUsername = _userService.GetUserSession();
-            User currentUser = await _unitOfWorkRepository.UserRepository.GetbyUserName(currentUsername);
-            IQueryable<Department> departmentsQuery = _unitOfWorkRepository.DepartmentRepository.GetAll.Where(d => d.IsActive);
-            if (currentUser != null && currentUser.DepartmentId != 1)
-            {
-                departmentsQuery = departmentsQuery.Where(d => d.DepartmentId == currentUser.DepartmentId);
-            }
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
 
-            model.Departments = departmentsQuery
-                .Select(d => new SelectListItem
-                {
-                    Value = d.DepartmentId.ToString(),
-                    Text = d.Name
-                })
-                .ToList();
+        // Verifica se o usuário tem a permissão "Editar Usuarios" (ID 401, supondo que seja essa)
+        if (!userPermissions.Contains(402) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar usuarios." });
 
-            return PartialView("_UserForm", model);
-        }
+        User userExist = await _unitOfWorkRepository.UserRepository.GetAll.FirstOrDefaultAsync(u => u.UserName == model.UserName);
+        if(userExist is not null) return Json(new { success = false, message = "Usuário não pode conter esse 'UserName'." });
 
-        User user = await _unitOfWorkRepository.UserRepository.GetById(model.UserId);
-        if (user == null)
-            return Json(new { success = false, message = "Usuário não encontrado." });
+        User userUpdate = await _unitOfWorkRepository.UserRepository.GetById(model.UserId);
+        if (userUpdate is null) return Json(new { success = false, message = "Usuário não encontrado." });
 
         // Atualiza os dados
-        user.SetUserName(model.UserName);
-        user.SetEmail(model.Email);
+        userUpdate.SetUserName(model.UserName);
+        userUpdate.SetEmail(model.Email);
         if (!string.IsNullOrEmpty(model.Password)) // Só atualiza a senha se fornecida
         {
-            user.SetPassword(model.Password);
+            userUpdate.SetPassword(model.Password);
         }
-        user.DepartmentId = model.DepartmentId;
+
+        userUpdate.DepartmentId = model.DepartmentId;
+
         if (model.IsActive)
-            user.Activate();
+            userUpdate.Activate();
         else
-            user.Deactivate();
+            userUpdate.Deactivate();
 
-        user.RoleId = model.RoleId;
+        userUpdate.RoleId = model.RoleId;
 
-        await _unitOfWorkRepository.UserRepository.Update(user);
+        await _unitOfWorkRepository.UserRepository.Update(userUpdate);
         await _unitOfWorkRepository.Save();
 
         return Json(new { success = true, message = "Usuário atualizado com sucesso!" });
@@ -247,10 +265,22 @@ public class UserController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
-        User user = await _unitOfWorkRepository.UserRepository.GetById(id);
-        if (user is null) return NotFound();
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return Json(new { success = false, message = "Você não tem permissão para adicionar usuarios." });
 
-        await _unitOfWorkRepository.UserRepository.Delete(user);
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Excluir Usuarios" (ID 401, supondo que seja essa)
+        if (!userPermissions.Contains(403) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para excluir usuarios." });
+
+        User userUpdate = await _unitOfWorkRepository.UserRepository.GetById(id);
+        if (userUpdate is null) return Json(new { success = false, message = "Usuário não encontrado." });
+
+        await _unitOfWorkRepository.UserRepository.Delete(userUpdate);
         await _unitOfWorkRepository.Save();
         return Json(new { success = true, message = "Usuario Excluido com sucesso!" });
     }
