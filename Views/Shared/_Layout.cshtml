@@ -46,8 +46,8 @@
                                     <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Usuários</a>
                                 </li>
                             }
-                           
-                            @if (userPermissions.Contains(000) || userPermissions.Contains(100)) // Verifica permissão "Ver Permissões"
+
+                            @if (userPermissions.Contains(000) || userPermissions.Contains(100))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-controller="Permission" asp-action="Index">Permissões</a>
@@ -61,9 +61,13 @@
                                 </li>
                             }
 
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Role" asp-action="Index">Cargo</a>
-                            </li>
+                            @if (userPermissions.Contains(000) || userPermissions.Contains(300))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Role" asp-action="Index">Cargo</a>
+                                </li>
+                            }
+                          
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="BookGender" asp-action="Index">Livro Gênero</a>
                             </li>

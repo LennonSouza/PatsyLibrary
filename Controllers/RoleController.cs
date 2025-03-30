@@ -19,31 +19,38 @@ public class RoleController : Controller
         _userService = userService;
     }
 
-
     // Action para exibir a página inicial (index)
     public async Task<IActionResult> Index()
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
         User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
 
-        IQueryable<User> users = _unitOfWorkRepository.UserRepository.GetAll;
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
 
-        // Obtém os departamentos filtrados
-        IQueryable<Role> rolesQuery = _unitOfWorkRepository.RoleRepository.GetAll;
+        // Obtém todas as permissões disponíveis
+        List<Role> todosCargos = await _unitOfWorkRepository.RoleRepository.GetAll.ToListAsync();
 
-        // Se o usuário não tiver o departamento "1" (Master), filtra apenas os vinculados
-        if (user.DepartmentId != 1)
+        // Verifica se o usuário tem a permissão "Super Admin" (ID 000)
+        if (userPermissions.Contains(000)) return View(todosCargos);
+
+        // Verifica se o usuário tem a permissão "Ver Permissões" (ID 300)
+        if (userPermissions.Contains(300))
         {
-            rolesQuery = rolesQuery.Where(d => d.DepartmentId == user.DepartmentId);
+            // Filtra apenas o departamento do usuário
+            List<Role> departamentosDoUsuario = todosCargos
+                .Where(d => d.DepartmentId == user.DepartmentId)
+                .ToList();
+
+            return View(departamentosDoUsuario);
         }
 
-        // Materializa a consulta para uma lista
-        List<Role> filteredRoles = await rolesQuery.ToListAsync();
-
-        return View(filteredRoles);
+        return PartialView("AccessDenied");
     }
 
     // Action para exibir o formulário de inserção
@@ -51,7 +58,27 @@ public class RoleController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
-        ViewBag.DepartmentList = _unitOfWorkRepository.DepartmentRepository.GetAll.ToList();
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 301, supondo que seja essa)
+        if (!userPermissions.Contains(301) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para adicionar cargos." });
+
+        // Se o usuário for Super Admin (ID 000), pode ver todos os departamentos
+        if (!userPermissions.Contains(000))
+        {
+            ViewBag.DepartmentList = _unitOfWorkRepository.DepartmentRepository.GetAll.Where(d => d.DepartmentId == user.DepartmentId).ToList();
+        }
+        else
+        {
+            ViewBag.DepartmentList = _unitOfWorkRepository.DepartmentRepository.GetAll.ToList();
+        }
 
         // Retorna a view parcial para o modal de adicionar
         return PartialView("_RoleForm", new Role());
@@ -66,8 +93,16 @@ public class RoleController : Controller
         if (ModelState.IsValid)
         {
             string usename = _userService.GetUserSession();
+            if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
             User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+            if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+            // Obtém as permissões do usuário a partir do seu papel
+            HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+            // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 301, supondo que seja essa)
+            if (!userPermissions.Contains(301) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para adicionar cargos." });
 
             if (!string.IsNullOrWhiteSpace(name))
             {
@@ -91,6 +126,18 @@ public class RoleController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 302, supondo que seja essa)
+        if (!userPermissions.Contains(302) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar cargos." });
+
         // Carregar a lista de departamentos
         ViewBag.DepartmentList = await _unitOfWorkRepository.DepartmentRepository.GetAll
             .Where(d => d.IsActive) // Opcional: apenas departamentos ativos
@@ -99,8 +146,7 @@ public class RoleController : Controller
 
         // Buscar o cargo pelo ID
         Role role = await _unitOfWorkRepository.RoleRepository.GetById(id);
-        if (role == null)
-            return NotFound();
+        if (role is null) return Json(new { success = false, message = "Cargo não encontrado." });
 
         return PartialView("_RoleForm", role);
     }
@@ -110,24 +156,27 @@ public class RoleController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return Json(new { success = false, message = "Nome não pode ser vazio." });
-        }
+        if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Nome não pode ser vazio." });
+
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 302, supondo que seja essa)
+        if (!userPermissions.Contains(302) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar cargos." });
 
         // Buscar o cargo pelo ID
         var role = await _unitOfWorkRepository.RoleRepository.GetById(roleId);
-        if (role == null)
-        {
-            return Json(new { success = false, message = "Cargo não encontrado." });
-        }
+        if (role is null) return Json(new { success = false, message = "Cargo não encontrado." });
 
         // Verificar se o departamento existe
         var department = await _unitOfWorkRepository.DepartmentRepository.GetById(departmentId);
-        if (department == null)
-        {
-            return Json(new { success = false, message = "Departamento não encontrado." });
-        }
+        if (department is null) return Json(new { success = false, message = "Departamento não encontrado." });
 
         // Atualizar os dados do cargo
         role.SetName(name);
@@ -148,8 +197,20 @@ public class RoleController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 302, supondo que seja essa)
+        if (!userPermissions.Contains(303) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para excluir cargos." });
+
         Role role = await _unitOfWorkRepository.RoleRepository.GetById(id);
-        if (role is null) return NotFound();
+        if (role is null) return Json(new { success = false, message = "Cargo não encontrado." });
 
         await _unitOfWorkRepository.RoleRepository.Delete(role);
         await _unitOfWorkRepository.Save();
@@ -161,11 +222,26 @@ public class RoleController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
-        var role = await _unitOfWorkRepository.RoleRepository.GetById(roleId);
-        if (role == null)
-            return NotFound();
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
-        var allPermissions = await _unitOfWorkRepository.PermissionRepository.GetAll.ToListAsync();
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 302, supondo que seja essa)
+        if (!userPermissions.Contains(305) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar permissões cargos." });
+
+        var role = await _unitOfWorkRepository.RoleRepository.GetById(roleId);
+        if (role is null) return Json(new { success = false, message = "Cargo não encontrado." });
+
+        // Filtra apenas as permissões que o usuário tem OU que estão na casa dos 500
+        List<Permission> allPermissions = await _unitOfWorkRepository.PermissionRepository
+            .GetAll
+            .Where(p => userPermissions.Contains(p.PermissionId) || (p.PermissionId >= 500 && p.PermissionId < 600))
+            .ToListAsync();
 
         return PartialView("_ManagePermissions", (Role: role, AllPermissions: allPermissions));
     }
@@ -175,13 +251,25 @@ public class RoleController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
-        var role = await _unitOfWorkRepository.RoleRepository.GetById(roleId);
-        var permission = await _unitOfWorkRepository.PermissionRepository.GetById(permissionId);
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
 
-        if (role == null || permission == null)
-            return Json(new { success = false, message = "Cargo ou permissão não encontrados." });
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
 
-        var rolePermission = new RolePermission { RoleId = roleId, PermissionId = permissionId };
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 302, supondo que seja essa)
+        if (!userPermissions.Contains(305) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar permissões cargos." });
+
+        Role role = await _unitOfWorkRepository.RoleRepository.GetById(roleId);
+        if (role is null) return Json(new { success = false, message = "Cargo não encontrados." });
+
+        Permission permission = await _unitOfWorkRepository.PermissionRepository.GetById(permissionId);
+        if (permission is null) return Json(new { success = false, message = "Permissão não encontrados." });
+
+        RolePermission rolePermission = new RolePermission { RoleId = roleId, PermissionId = permissionId };
         await _unitOfWorkRepository.RolePermissionRepository.Insert(rolePermission);
         await _unitOfWorkRepository.Save();
 
@@ -193,9 +281,20 @@ public class RoleController : Controller
     {
         if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
-        var rolePermission = await _unitOfWorkRepository.RolePermissionRepository.GetByIds(roleId, permissionId);
-        if (rolePermission == null)
-            return Json(new { success = false, message = "Permissão não associada ao cargo." });
+        string usename = _userService.GetUserSession();
+        if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
+
+        User user = await _unitOfWorkRepository.UserRepository.GetbyUserName(usename);
+        if (user is null) return Json(new { success = false, message = "Erro => Usuário não encontrado." });
+
+        // Obtém as permissões do usuário a partir do seu papel
+        HashSet<short> userPermissions = user.Role.RolePermissions.Select(p => p.PermissionId).ToHashSet();
+
+        // Verifica se o usuário tem a permissão "Criar Departamentos" (ID 302, supondo que seja essa)
+        if (!userPermissions.Contains(305) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar permissões cargos." });
+
+        RolePermission rolePermission = await _unitOfWorkRepository.RolePermissionRepository.GetByIds(roleId, permissionId);
+        if (rolePermission is null) return Json(new { success = false, message = "Permissão não associada ao cargo." });
 
         await _unitOfWorkRepository.RolePermissionRepository.Delete(rolePermission);
         await _unitOfWorkRepository.Save();

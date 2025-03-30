@@ -98,6 +98,9 @@ public class UserController : Controller
             rolesQuery = rolesQuery.Where(r => r.DepartmentId == user.DepartmentId);
         }
 
+        // Exclui o cargo do usuário logado
+        rolesQuery = rolesQuery.Where(r => r.RoleId != user.RoleId);
+
         List<SelectListItem> roles = rolesQuery
             .Select(r => new SelectListItem
             {
@@ -232,7 +235,10 @@ public class UserController : Controller
         if (!userPermissions.Contains(402) && !userPermissions.Contains(000)) return Json(new { success = false, message = "Você não tem permissão para editar usuarios." });
 
         User userExist = await _unitOfWorkRepository.UserRepository.GetAll.FirstOrDefaultAsync(u => u.UserName == model.UserName);
-        if(userExist is not null) return Json(new { success = false, message = "Usuário não pode conter esse 'UserName'." });
+        if(userExist is not null)
+        {
+            if(userExist.UserName != model.UserName) return Json(new { success = false, message = "Usuário não pode conter esse 'UserName'." });
+        }
 
         User userUpdate = await _unitOfWorkRepository.UserRepository.GetById(model.UserId);
         if (userUpdate is null) return Json(new { success = false, message = "Usuário não encontrado." });

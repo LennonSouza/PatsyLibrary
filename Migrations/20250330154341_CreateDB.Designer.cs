@@ -12,7 +12,7 @@ using PatsyLibrary.Data;
 namespace PatsyLibrary.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250330005327_CreateDB")]
+    [Migration("20250330154341_CreateDB")]
     partial class CreateDB
     {
         /// <inheritdoc />

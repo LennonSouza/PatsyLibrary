@@ -23,10 +23,15 @@ public static class DefaultPermissions
         { 301, "Adicionar Cargos" },
         { 302, "Editar Cargos" },
         { 303, "Excluir Cargos" },
+        { 304, "Ver Permissões do Cargo" },
+        { 305, "Editar Permissões do Cargo" },
         { 400, "Ver Usuarios" },     // 4XX para Usuários
         { 401, "Adicionar Usuarios" },
         { 402, "Editar Usuarios" }, 
-        { 403, "Excluir Usuarios" }
+        { 500, "Ver Livros" },    // 5XX para Livros
+        { 501, "Adicionar Livros" },
+        { 502, "Editar Livros" },
+        { 503, "Excluir Livros" }
     };
 
     public static async Task Initialize(IUnitOfWorkRepository unitOfWork) 
