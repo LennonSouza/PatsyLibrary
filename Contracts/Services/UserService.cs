@@ -1,8 +1,9 @@
-﻿using PatsyLibrary.Contracts.DataAccess.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Contracts.Services.Interfaces;
 using PatsyLibrary.Models;
 using PatsyLibrary.ViewModels;
-using static PatsyLibrary.Services.LibraryHelper;
+using static PatsyLibrary.Helpers.LibraryHelper;
 
 namespace PatsyLibrary.Contracts.Services;
 
@@ -15,6 +16,13 @@ public class UserService : IUserService
     {
         _unitOfWorkRepository = unitOfWorkRepository;
         _httpContextAccessor = httpContextAccessor;
+    }
+
+    public async Task<List<User>> AllUsers() => await _unitOfWorkRepository.UserRepository.GetAll.ToListAsync();
+
+    public async Task<User> GetByUserName(string name)
+    {
+        return await _unitOfWorkRepository.UserRepository.GetbyUserName(name);
     }
 
     public async Task<(bool IsSuccess, string Message)> RegisterUserAsync(RegisterUserViewModel model)
@@ -35,7 +43,7 @@ public class UserService : IUserService
         else
             user.Deactivate();
 
-        user.SetRole(model.RoleId);
+        user.UpdateRole(model.RoleId);
 
         try
         {
@@ -67,4 +75,9 @@ public class UserService : IUserService
     }
 
     public string GetUserSession() => _httpContextAccessor.HttpContext.Session.GetString("UserName");
+
+    public async Task<User> GetByUserId(int userId)
+    {
+        return await _unitOfWorkRepository.UserRepository.GetById(userId);
+    }
 }

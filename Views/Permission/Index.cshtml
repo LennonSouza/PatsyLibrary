@@ -1,4 +1,5 @@
-﻿@model IEnumerable<Permission>
+﻿@using PatsyLibrary.Helpers
+@model IEnumerable<Permission>
 
 @{
     ViewData["Title"] = "Permissões";
@@ -33,7 +34,7 @@
             <tr>
                 <td>@permission.Name</td>
                 <td class="text-center">
-                    @if (!PatsyLibrary.Services.DefaultPermissions.IsSystemPermission(permission.Name))
+                    @if (!DefaultPermissions.IsSystemPermission(permission.Name))
                     {
                         <button class="btn btn-warning btn-sm btn-update" data-id="@permission.PermissionId">
                             <i class="fas fa-edit"></i>

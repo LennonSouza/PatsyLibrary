@@ -1,4 +1,5 @@
-﻿@model Permission
+﻿@using PatsyLibrary.Helpers
+@model Permission
 
 <form id="permissionForm" method="post" action="@Url.Action(Model.PermissionId == 0 ? "Insert" : "Update", "Permission")">
     @if (Model.PermissionId != 0) // Só inclui o hidden se for edição
@@ -6,7 +7,7 @@
         <input type="hidden" name="PermissionId" value="@Model.PermissionId" />
     }
 
-    @if (PatsyLibrary.Services.DefaultPermissions.IsSystemPermission(Model.Name))
+    @if (DefaultPermissions.IsSystemPermission(Model.Name))
     {
         <div class="alert alert-warning" role="alert">
             Esta é uma permissão padrão do sistema e não pode ser editada.

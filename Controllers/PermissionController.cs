@@ -2,8 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Contracts.Services.Interfaces;
+using PatsyLibrary.Helpers;
 using PatsyLibrary.Models;
-using PatsyLibrary.Services;
 
 namespace PatsyLibrary.Controllers;
 
@@ -22,7 +22,7 @@ public class PermissionController : Controller
     // Exibe todas as permissões
     public async Task<IActionResult> Index()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         string usename = _userService.GetUserSession();
         if(string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -53,7 +53,7 @@ public class PermissionController : Controller
     [HttpGet]
     public async Task<IActionResult> Insert()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext))
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext))
             return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         // Cria uma nova permissão vazia
@@ -83,7 +83,7 @@ public class PermissionController : Controller
     [HttpPost]
     public async Task<IActionResult> Insert(short permissionId, string name)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext))
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext))
             return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         if (string.IsNullOrWhiteSpace(name))
@@ -136,7 +136,7 @@ public class PermissionController : Controller
     [HttpGet]
     public async Task<IActionResult> Update(short permissionId)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         if (permissionId < 1) return Json(new { success = false, message = "Erro => Permissão não encontrada" });
 
@@ -150,7 +150,7 @@ public class PermissionController : Controller
     [HttpPost]
     public async Task<IActionResult> Update(short permissionId, string name)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Nome não pode ser vazio." });
         if (permissionId < 1) return Json(new { success = false, message = "Erro => Permissão não encontrada" });
@@ -162,7 +162,7 @@ public class PermissionController : Controller
         try
         {
             // Atualizar o nome da permissão
-            permission.SetName(name);
+            permission.UpdateName(name);
 
             // Atualizar no banco de dados
             await _unitOfWorkRepository.PermissionRepository.Update(permission);
@@ -180,7 +180,7 @@ public class PermissionController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(short permissionId)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         if (permissionId < 1) return Json(new { success = false, message = "Erro => Permissão não encontrada" });
 

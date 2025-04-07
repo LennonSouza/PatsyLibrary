@@ -6,9 +6,9 @@ public class BookStatus
     public BookStatus(int bookId, string provenance, string shelf, string shelfLetter)
     {
         BookId = bookId;
-        SetProvenance(provenance);
-        SetShelf(shelf);
-        SetShelfLetter(shelfLetter);
+        UpdateProvenance(provenance);
+        UpdateShelf(shelf);
+        UpdateShelfLetter(shelfLetter);
         Rating = 0;  // Inicializa avaliação como 0, se não definida
         IsAvailable = true;  // Inicializa como disponível por padrão
     }
@@ -61,12 +61,12 @@ public class BookStatus
     public void ReturnBook(string shelf, string shelfLetter)
     {
         IsAvailable = true;
-        SetShelf(shelf);
-        SetShelfLetter(shelfLetter);
+        UpdateShelf(shelf);
+        UpdateShelfLetter(shelfLetter);
     }
 
     // Métodos de validação para garantir que a Procedência e a Estante sejam válidas.
-    private void SetProvenance(string provenance)
+    private void UpdateProvenance(string provenance)
     {
         if (string.IsNullOrWhiteSpace(provenance))
             throw new ArgumentException("A procedência não pode ser vazia.", nameof(provenance));
@@ -74,7 +74,7 @@ public class BookStatus
         Provenance = provenance;
     }
 
-    private void SetShelf(string shelf)
+    private void UpdateShelf(string shelf)
     {
         if (!IsAvailable && shelf != null)
             throw new InvalidOperationException("Não é possível definir a estante quando o livro não está disponível.");
@@ -82,7 +82,7 @@ public class BookStatus
         Shelf = shelf;
     }
 
-    private void SetShelfLetter(string shelfLetter)
+    private void UpdateShelfLetter(string shelfLetter)
     {
         if (!IsAvailable && shelfLetter != null)
             throw new InvalidOperationException("Não é possível definir a letra da estante quando o livro não está disponível.");

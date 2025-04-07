@@ -2,7 +2,7 @@
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Models;
 
-namespace PatsyLibrary.Services;
+namespace PatsyLibrary.Helpers;
 
 public static class DefaultPermissions
 {

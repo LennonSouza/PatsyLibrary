@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
+using PatsyLibrary.Helpers;
 using PatsyLibrary.Models;
-using PatsyLibrary.Services;
 
 namespace PatsyLibrary.Controllers;
 
@@ -14,7 +14,7 @@ public class BookPublisherController : Controller
     // Action para exibir a página inicial (index)
     public async Task<IActionResult> Index()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         var bookPublishers = _unitOfWorkRepository.BookPublisherRepository.GetAll.ToList();
         return View(bookPublishers);
@@ -23,7 +23,7 @@ public class BookPublisherController : Controller
     // Action para exibir o formulário de inserção
     public async Task<IActionResult> Insert()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
         // Retorna a view parcial para o modal de adicionar
         return PartialView("_BookPublisherForm", new BookPublisher());
     }
@@ -32,7 +32,7 @@ public class BookPublisherController : Controller
     [HttpPost]
     public async Task<IActionResult> Insert(string name)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         if (ModelState.IsValid)
         {
@@ -53,7 +53,7 @@ public class BookPublisherController : Controller
     [HttpGet]
     public async Task<IActionResult> Update(short id)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         BookPublisher bookPublisher = await _unitOfWorkRepository.BookPublisherRepository.GetById(id);
         if (bookPublisher is null) return NotFound();
@@ -63,7 +63,7 @@ public class BookPublisherController : Controller
     [HttpPost]
     public async Task<IActionResult> Update(short bookPublisherId, string name)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         if (string.IsNullOrWhiteSpace(name)) // Valida o nome
         {
@@ -90,7 +90,7 @@ public class BookPublisherController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(short id)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         BookPublisher bookPublisher = await _unitOfWorkRepository.BookPublisherRepository.GetById(id);
         if (bookPublisher is null) return NotFound();

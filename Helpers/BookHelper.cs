@@ -1,4 +1,4 @@
-﻿namespace PatsyLibrary.Services;
+﻿namespace PatsyLibrary.Helpers;
 
 public class BookHelper
 {

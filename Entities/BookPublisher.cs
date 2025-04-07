@@ -4,7 +4,7 @@ public class BookPublisher
 {
     public BookPublisher(string name)
     {
-        SetName(name);
+        UpdateName(name);
     }
 
     public short BookPublisherId { get; private set; }
@@ -12,7 +12,7 @@ public class BookPublisher
 
     public virtual ICollection<Book> Books { get; set; }
 
-    public void SetName(string name)
+    public void UpdateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("O nome da editora não pode ser vazio ou nulo.");
@@ -24,6 +24,6 @@ public class BookPublisher
 
     public void UpdateBookPublisher(string name)
     {
-        SetName(name);
+        UpdateName(name);
     }
 }

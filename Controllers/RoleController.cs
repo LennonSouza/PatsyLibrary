@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Contracts.Services.Interfaces;
 using PatsyLibrary.Entities;
+using PatsyLibrary.Helpers;
 using PatsyLibrary.Models;
-using PatsyLibrary.Services;
 
 namespace PatsyLibrary.Controllers;
 
@@ -22,7 +22,7 @@ public class RoleController : Controller
     // Action para exibir a página inicial (index)
     public async Task<IActionResult> Index()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -56,7 +56,7 @@ public class RoleController : Controller
     // Action para exibir o formulário de inserção
     public async Task<IActionResult> Insert()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -88,7 +88,7 @@ public class RoleController : Controller
     [HttpPost]
     public async Task<IActionResult> Insert(string name, short departmentId, bool isActive)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         if (ModelState.IsValid)
         {
@@ -124,7 +124,7 @@ public class RoleController : Controller
     [HttpGet]
     public async Task<IActionResult> Update(short id)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -154,7 +154,7 @@ public class RoleController : Controller
     [HttpPost]
     public async Task<IActionResult> Update(short roleId, string name, short departmentId, bool isActive)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Nome não pode ser vazio." });
 
@@ -179,8 +179,8 @@ public class RoleController : Controller
         if (department is null) return Json(new { success = false, message = "Departamento não encontrado." });
 
         // Atualizar os dados do cargo
-        role.SetName(name);
-        role.SetDepartment(departmentId);
+        role.UpdateName(name);
+        role.UpdateDepartment(departmentId);
 
         if (isActive) role.Activate();
         else role.Deactivate();
@@ -195,7 +195,7 @@ public class RoleController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(byte id)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -220,7 +220,7 @@ public class RoleController : Controller
     [HttpGet]
     public async Task<IActionResult> ManagePermissions(short roleId)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -249,7 +249,7 @@ public class RoleController : Controller
     [HttpPost]
     public async Task<IActionResult> AddPermission(short roleId, short permissionId)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -279,7 +279,7 @@ public class RoleController : Controller
     [HttpPost]
     public async Task<IActionResult> RemovePermission(short roleId, short permissionId) // Ajuste para short
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");

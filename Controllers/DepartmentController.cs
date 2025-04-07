@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Contracts.Services.Interfaces;
+using PatsyLibrary.Helpers;
 using PatsyLibrary.Models;
-using PatsyLibrary.Services;
 
 namespace PatsyLibrary.Controllers;
 
@@ -20,7 +20,7 @@ public class DepartmentController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -54,7 +54,7 @@ public class DepartmentController : Controller
     [HttpGet]
     public async Task<IActionResult> Insert()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         string usename = _userService.GetUserSession();
         if (string.IsNullOrWhiteSpace(usename)) return PartialView("AccessDenied");
@@ -78,7 +78,7 @@ public class DepartmentController : Controller
     [HttpPost]
     public async Task<IActionResult> Insert(string name, bool isActive)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Erro => Nome não pode ser vazio ou nulo." });
 
@@ -116,7 +116,7 @@ public class DepartmentController : Controller
     [HttpGet]
     public async Task<IActionResult> Update(short departmentId)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         if (departmentId < 1) return Json(new { success = false, message = "Erro => Departamento não encontrada" });
 
@@ -141,7 +141,7 @@ public class DepartmentController : Controller
     [HttpPost]
     public async Task<IActionResult> Update(short departmentId, string name, bool isActive)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         if (string.IsNullOrWhiteSpace(name)) return Json(new { success = false, message = "Nome não pode ser vazio." });
         if (departmentId < 1) return Json(new { success = false, message = "Erro => Departamento não encontrada" });
@@ -166,7 +166,7 @@ public class DepartmentController : Controller
         try
         {
             // Atualizar o nome da permissão
-            department.SetName(name);
+            department.UpdateName(name);
 
             if (isActive) department.Activate();
             else department.Deactivate();
@@ -186,7 +186,7 @@ public class DepartmentController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(short departmentId)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado. A sessão expirou." });
 
         if (departmentId < 1) return Json(new { success = false, message = "Erro => Departamento não encontrada" });
 

@@ -2,8 +2,8 @@
 using PatsyLibrary.Contracts.DataAccess.Interfaces;
 using PatsyLibrary.Contracts.Services.Interfaces;
 using PatsyLibrary.DTOs;
+using PatsyLibrary.Helpers;
 using PatsyLibrary.Models;
-using PatsyLibrary.Services;
 using PatsyLibrary.ViewModels;
 
 namespace PatsyLibrary.Controllers;
@@ -22,7 +22,7 @@ public class BookController : Controller
     // Action para exibir a página inicial (index)
     public async Task<IActionResult> Index()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         ViewBag.DepartmentList = _unitOfWorkRepository.DepartmentRepository.GetAll.ToList();
         ViewBag.BookGenderList = _unitOfWorkRepository.BookGenderRepository.GetAll.ToList();
@@ -35,7 +35,7 @@ public class BookController : Controller
     // Action para exibir o formulário de inserção
     public async Task<IActionResult> Insert()
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
         // Retorna a view parcial para o modal de adicionar
         return PartialView("_BookForm", new Book());
     }
@@ -44,7 +44,7 @@ public class BookController : Controller
     [HttpPost]
     public async Task<IActionResult> InsertAutomatic([FromBody] InsertBookViewModel insertBook)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         if (string.IsNullOrWhiteSpace(insertBook.Isbn))
             return Json(new { success = false, message = "ISBN inválido!" });
@@ -132,7 +132,7 @@ public class BookController : Controller
     [HttpPost]
     public async Task<IActionResult> InsertManual([FromBody] BookDto book)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         if (!ModelState.IsValid)
         {
@@ -181,7 +181,7 @@ public class BookController : Controller
     [HttpGet]
     public async Task<IActionResult> Update(int id)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         // Carregar listas para o dropdown
         ViewBag.BookPublisherList = _unitOfWorkRepository.BookPublisherRepository.GetAll.ToList();
@@ -219,7 +219,7 @@ public class BookController : Controller
     [HttpPost]
     public async Task<IActionResult> Update([FromBody] Book book)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         // Buscar o livro pelo ID
         var existingBook = await _unitOfWorkRepository.BookRepository.GetById(book.BookId);
@@ -255,7 +255,7 @@ public class BookController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(int id)
     {
-        if (!await LibraryHelper.Result.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
+        if (!await AuthorizeHelper.AuthorizeSession(HttpContext)) return Json(new { success = false, message = "Você foi desconectado." });
 
         Book book = await _unitOfWorkRepository.BookRepository.GetById(id);
         if (book is null) return NotFound();

@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PatsyLibrary.Contracts.Services.Interfaces;
 using PatsyLibrary.ViewModels;
+using PatsyLibrary.Contracts.Services.Interfaces;
 
 namespace PatsyLibrary.Controllers;
 
